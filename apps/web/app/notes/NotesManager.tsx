@@ -127,6 +127,7 @@ function NoteModal({
   const c = colorClasses(color);
   const isMirror = color === 'mirror';
   const lbl = isMirror ? 'text-gray-900' : 'text-gray-400';
+  function onReminderChange(date: Date | null) { setReminderAt(date); }
   const filteredSuggestions = allTags.filter(
     t => t.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(t)
   );
@@ -391,7 +392,7 @@ function NoteModal({
               <span className="text-gray-400 text-sm leading-none">📅</span>
               <DatePicker
                 selected={reminderAt}
-                onChange={(date) => setReminderAt(date)}
+                onChange={onReminderChange}
                 showTimeSelect
                 timeFormat="HH:mm"
                 timeIntervals={15}
