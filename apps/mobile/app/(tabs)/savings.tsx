@@ -1,0 +1,355 @@
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@clerk/clerk-expo';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { apiFetch } from '@/lib/api';
+import AddSavingSheet from '@/components/AddSavingSheet';
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+type SavingType =
+  | 'POST_OFFICE' | 'FIXED_DEPOSIT' | 'RECURRING_DEPOSIT'
+  | 'STOCKS' | 'MUTUAL_FUNDS' | 'GOLD' | 'EPF' | 'NPS' | 'OTHER';
+
+interface Platform {
+  id: string;
+  name: string;
+  totalAdded: number;
+  note: string | null;
+  totalInvested: number;
+  balance: number;
+}
+
+interface Saving {
+  id: string;
+  name: string;
+  type: SavingType;
+  investedAmount: number;
+  charges: number;
+  currentValue: number;
+  netCost: number;
+  gainLoss: number;
+  gainPercent: number;
+  startDate: string;
+  maturityDate: string | null;
+  note: string | null;
+  platform: { id: string; name: string } | null;
+}
+
+interface Summary {
+  totalInvested: number;
+  totalCharges: number;
+  totalNetCost: number;
+  totalCurrentValue: number;
+  totalGainLoss: number;
+  totalGainPercent: number;
+  count: number;
+}
+
+const TYPE_META: Record<SavingType, { label: string; icon: string }> = {
+  POST_OFFICE:       { label: 'Post Office',    icon: '📮' },
+  FIXED_DEPOSIT:     { label: 'Fixed Deposit',  icon: '🏦' },
+  RECURRING_DEPOSIT: { label: 'RD',             icon: '📅' },
+  MUTUAL_FUNDS:      { label: 'Mutual Funds',   icon: '📈' },
+  STOCKS:            { label: 'Stocks',          icon: '💹' },
+  GOLD:              { label: 'Gold',            icon: '🥇' },
+  EPF:               { label: 'EPF',             icon: '🏢' },
+  NPS:               { label: 'NPS',             icon: '🛡️' },
+  OTHER:             { label: 'Other',           icon: '📦' },
+};
+
+// ─── Helpers ────────────────────────────────────────────────────────────────────
+
+function formatINR(n: number) {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency', currency: 'INR', maximumFractionDigits: 0,
+  }).format(n);
+}
+
+// ─── Screen ─────────────────────────────────────────────────────────────────────
+
+export default function SavingsScreen() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [sheetMode, setSheetMode] = useState<'platform' | 'saving' | null>(null);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['savings-summary'] });
+    queryClient.invalidateQueries({ queryKey: ['savings-platforms'] });
+    queryClient.invalidateQueries({ queryKey: ['savings-list'] });
+  };
+
+  const summaryQuery = useQuery({
+    queryKey: ['savings-summary'],
+    queryFn: async () => {
+      const token = await getToken();
+      return apiFetch<Summary>('/savings/summary', token!);
+    },
+  });
+
+  const platformsQuery = useQuery({
+    queryKey: ['savings-platforms'],
+    queryFn: async () => {
+      const token = await getToken();
+      return apiFetch<Platform[]>('/savings/platforms', token!);
+    },
+  });
+
+  const savingsQuery = useQuery({
+    queryKey: ['savings-list'],
+    queryFn: async () => {
+      const token = await getToken();
+      return apiFetch<Saving[]>('/savings', token!);
+    },
+  });
+
+  const isRefreshing = summaryQuery.isFetching || savingsQuery.isFetching || platformsQuery.isFetching;
+
+  function handleRefresh() {
+    summaryQuery.refetch();
+    platformsQuery.refetch();
+    savingsQuery.refetch();
+  }
+
+  async function deleteSaving(id: string, name: string) {
+    Alert.alert('Delete Investment', `Delete "${name}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await getToken();
+            await apiFetch(`/savings/${id}`, token!, { method: 'DELETE' });
+            invalidate();
+          } catch {
+            Alert.alert('Error', 'Failed to delete investment.');
+          }
+        },
+      },
+    ]);
+  }
+
+  async function deletePlatform(id: string, name: string) {
+    Alert.alert('Delete Platform', `Delete "${name}" and all linked investments?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await getToken();
+            await apiFetch(`/savings/platforms/${id}`, token!, { method: 'DELETE' });
+            invalidate();
+          } catch {
+            Alert.alert('Error', 'Failed to delete platform.');
+          }
+        },
+      },
+    ]);
+  }
+
+  const sum = summaryQuery.data;
+  const platforms = platformsQuery.data ?? [];
+  const savings = savingsQuery.data ?? [];
+  const isGain = (sum?.totalGainLoss ?? 0) >= 0;
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      {sheetMode && (
+        <AddSavingSheet
+          visible
+          mode={sheetMode}
+          platforms={platforms.map(p => ({ id: p.id, name: p.name, balance: p.balance }))}
+          onClose={() => setSheetMode(null)}
+          onSuccess={() => { invalidate(); setSheetMode(null); }}
+        />
+      )}
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+      >
+        {/* ── Portfolio Summary ───────────────────────────────────────── */}
+        {sum && sum.count > 0 && (
+          <View style={styles.summaryRow}>
+            <View style={[styles.summaryCard, { backgroundColor: '#6366f1' }]}>
+              <Text style={styles.summaryLabel}>Invested</Text>
+              <Text style={styles.summaryValue}>{formatINR(sum.totalNetCost)}</Text>
+            </View>
+            <View style={[styles.summaryCard, { backgroundColor: '#4f46e5' }]}>
+              <Text style={styles.summaryLabel}>Current</Text>
+              <Text style={styles.summaryValue}>{formatINR(sum.totalCurrentValue)}</Text>
+            </View>
+            <View style={[styles.summaryCard, { backgroundColor: isGain ? '#059669' : '#e11d48' }]}>
+              <Text style={styles.summaryLabel}>Gain/Loss</Text>
+              <Text style={styles.summaryValue}>
+                {isGain ? '+' : ''}{formatINR(sum.totalGainLoss)}
+              </Text>
+              <Text style={styles.summaryPct}>
+                {sum.totalGainPercent >= 0 ? '+' : ''}{sum.totalGainPercent.toFixed(1)}%
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ── Platforms ───────────────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Platforms</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setSheetMode('platform')}>
+            <Text style={styles.addBtnText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
+
+        {platforms.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No platforms yet.</Text>
+            <Text style={styles.emptyHint}>Add one to track your in-app wallet balance.</Text>
+          </View>
+        ) : (
+          platforms.map(p => (
+            <View key={p.id} style={styles.platformCard}>
+              <View style={styles.platformHeader}>
+                <Text style={styles.platformName}>{p.name}</Text>
+                <TouchableOpacity onPress={() => deletePlatform(p.id, p.name)}>
+                  <Text style={styles.deleteIcon}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+              {p.note ? <Text style={styles.platformNote}>{p.note}</Text> : null}
+              <View style={styles.platformRow}>
+                <Text style={styles.platformRowLabel}>Transferred in</Text>
+                <Text style={styles.platformRowValue}>{formatINR(p.totalAdded)}</Text>
+              </View>
+              <View style={styles.platformRow}>
+                <Text style={styles.platformRowLabel}>Invested</Text>
+                <Text style={styles.platformRowValue}>{formatINR(p.totalInvested)}</Text>
+              </View>
+              <View style={[styles.platformRow, styles.platformRowLast]}>
+                <Text style={styles.platformRowLabelBold}>Balance</Text>
+                <Text style={[styles.platformRowValueBold, p.balance < 0 ? styles.negative : styles.positive]}>
+                  {formatINR(p.balance)}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+
+        {/* ── Investments ─────────────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Investments</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setSheetMode('saving')}>
+            <Text style={styles.addBtnText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
+
+        {savings.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No investments yet.</Text>
+            <Text style={styles.emptyHint}>Tap "+ Add" to start tracking.</Text>
+          </View>
+        ) : (
+          savings.map(s => {
+            const meta = TYPE_META[s.type] ?? { label: s.type, icon: '📦' };
+            const gain = s.gainLoss >= 0;
+            return (
+              <View key={s.id} style={styles.savingCard}>
+                <View style={styles.savingHeader}>
+                  <View style={styles.savingIconBox}>
+                    <Text style={styles.savingIcon}>{meta.icon}</Text>
+                  </View>
+                  <View style={styles.savingMeta}>
+                    <Text style={styles.savingName} numberOfLines={1}>{s.name}</Text>
+                    <Text style={styles.savingType}>{meta.label}{s.platform ? ` · ${s.platform.name}` : ''}</Text>
+                  </View>
+                  <View style={styles.savingValues}>
+                    <Text style={styles.savingCurrentValue}>{formatINR(s.currentValue)}</Text>
+                    <Text style={[styles.savingGainLoss, gain ? styles.positive : styles.negative]}>
+                      {gain ? '+' : ''}{formatINR(s.gainLoss)} ({s.gainPercent >= 0 ? '+' : ''}{s.gainPercent.toFixed(1)}%)
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.savingFooter}>
+                  <Text style={styles.savingDetail}>
+                    Invested {formatINR(s.investedAmount)}
+                    {s.charges > 0 ? ` + ${formatINR(s.charges)} charges` : ''}
+                  </Text>
+                  <TouchableOpacity onPress={() => deleteSaving(s.id, s.name)}>
+                    <Text style={styles.deleteIcon}>🗑️</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })
+        )}
+
+        <View style={{ height: 24 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#f9fafb' },
+  scroll: { flex: 1 },
+  content: { padding: 16, gap: 10, paddingBottom: 32 },
+
+  summaryRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
+  summaryCard: { flex: 1, borderRadius: 14, padding: 12, gap: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  summaryLabel: { fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
+  summaryValue: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  summaryPct: { fontSize: 10, color: 'rgba(255,255,255,0.8)' },
+
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  addBtn: { backgroundColor: '#6366f1', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 6 },
+  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  emptyCard: { backgroundColor: '#fff', borderRadius: 14, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' },
+  emptyText: { fontSize: 14, color: '#6b7280', fontWeight: '600' },
+  emptyHint: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
+
+  platformCard: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: '#f3f4f6',
+    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  platformHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  platformName: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  platformNote: { fontSize: 12, color: '#9ca3af', marginBottom: 8 },
+  platformRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
+  platformRowLast: { borderTopWidth: 1, borderTopColor: '#f3f4f6', marginTop: 4, paddingTop: 8 },
+  platformRowLabel: { fontSize: 13, color: '#6b7280' },
+  platformRowValue: { fontSize: 13, color: '#374151', fontWeight: '500' },
+  platformRowLabelBold: { fontSize: 13, color: '#374151', fontWeight: '600' },
+  platformRowValueBold: { fontSize: 14, fontWeight: '700' },
+
+  savingCard: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: '#f3f4f6',
+    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
+  },
+  savingHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  savingIconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
+  savingIcon: { fontSize: 18 },
+  savingMeta: { flex: 1 },
+  savingName: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  savingType: { fontSize: 11, color: '#9ca3af', marginTop: 1 },
+  savingValues: { alignItems: 'flex-end' },
+  savingCurrentValue: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  savingGainLoss: { fontSize: 11, fontWeight: '600', marginTop: 1 },
+  savingFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
+  savingDetail: { fontSize: 11, color: '#9ca3af' },
+
+  deleteIcon: { fontSize: 16 },
+  positive: { color: '#059669' },
+  negative: { color: '#e11d48' },
+});

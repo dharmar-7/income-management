@@ -1,0 +1,279 @@
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// USER
+// Stores everyone who signs in to the app.
+// Created automatically on first login via Clerk.
+// ─────────────────────────────────────────
+model User {
+  id        String   @id @default(uuid())   // unique ID for each user
+  clerkId   String   @unique                // the ID Clerk gives us after Google login
+  email     String   @unique
+  name      String?                         // optional — some Google accounts have no display name
+
+  // Gmail integration — all token fields are AES-256 encrypted before storing
+  gmailAccessToken  String?   // encrypted, expires after ~1 hour
+  gmailRefreshToken String?   // encrypted, never expires
+  gmailTokenExpiry  DateTime? // when the access token expires
+  gmailSyncedAt     DateTime? // last time we successfully synced emails
+  smsSyncedAt       DateTime? // last time we synced bank SMS (Android only)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  transactions        Transaction[]
+  budgets             Budget[]
+  cashTransactions    CashTransaction[]
+  investmentPlatforms InvestmentPlatform[]
+  savings             Saving[]
+  notes               Note[]
+}
+
+// ─────────────────────────────────────────
+// CATEGORY
+// Labels used to group transactions.
+// e.g. Food, Transport, Shopping, Bills
+// ─────────────────────────────────────────
+model Category {
+  id    String @id @default(uuid())
+  name  String @unique                      // e.g. "Food", "Transport"
+  icon  String?                             // optional emoji or icon name
+
+  // Relations
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+// ─────────────────────────────────────────
+// TRANSACTION
+// Every Google Pay transaction imported into the app.
+// ─────────────────────────────────────────
+model Transaction {
+  id          String   @id @default(uuid())
+  amount      Float                          // transaction amount in INR
+  merchant    String                         // who was paid — e.g. "Swiggy", "Amazon"
+  description String?                        // extra details from the transaction
+  date        DateTime                       // when the transaction happened
+  type        TransactionType                // DEBIT (money out) or CREDIT (money in)
+  source      ImportSource                   // how it was imported
+  upiRef      String?                        // UPI reference number for deduplication across sources
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign keys
+  userId      String
+  categoryId  String?                        // nullable — may not be categorized yet
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  // Prevent duplicate imports: same user, merchant, amount, and date = duplicate
+  @@unique([userId, merchant, amount, date])
+  // UPI ref deduplication — non-null values must be unique per user
+  @@unique([userId, upiRef])
+
+  // Performance indexes — these speed up the queries that run on every page load:
+  // Summary, by-category, by-month all filter on userId + date + type
+  @@index([userId, date])
+  @@index([userId, type, date])
+  @@index([userId, categoryId, date])
+}
+
+// ─────────────────────────────────────────
+// BUDGET
+// Monthly spending limit a user sets per category.
+// ─────────────────────────────────────────
+model Budget {
+  id         String @id @default(uuid())
+  amount     Float                           // the spending limit in INR
+  month      Int                             // 1–12
+  year       Int                             // e.g. 2026
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Foreign keys
+  userId     String
+  categoryId String
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // One budget per user per category per month
+  @@unique([userId, categoryId, month, year])
+}
+
+// ─────────────────────────────────────────
+// CASH TRANSACTION
+// Tracks physical cash the user has in hand.
+// Separate from digital bank/UPI transactions.
+// ─────────────────────────────────────────
+model CashTransaction {
+  id        String     @id @default(uuid())
+  amount    Float                           // amount in INR
+  flow      CashFlow                        // IN (received) or OUT (spent/deposited)
+  source    CashSource                      // where cash came from / went to
+  note      String?                         // optional description
+  date      DateTime                        // when it happened
+
+  createdAt DateTime   @default(now())
+
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// Fixed set of allowed values for certain fields.
+// ─────────────────────────────────────────
+enum TransactionType {
+  DEBIT      // money going out (you paid someone)
+  CREDIT     // money coming in (someone paid you)
+  REFUND     // partial/full refund — reduces expenses, not counted as income
+  INVESTMENT // transfer to investment platform — excluded from all summary calculations
+}
+
+enum ImportSource {
+  TAKEOUT  // imported from Google Takeout JSON
+  GMAIL    // synced from Gmail API
+  MANUAL   // uploaded manually by the user
+  SMS      // parsed from bank SMS (Android only)
+}
+
+enum CashFlow {
+  IN   // cash received (ATM, person, other)
+  OUT  // cash spent or deposited back to bank
+}
+
+enum CashSource {
+  ATM        // withdrawn from ATM
+  PERSON     // received from a person
+  OTHER      // other cash in
+  SPENT      // spent as cash payment
+  DEPOSITED  // deposited back to bank
+}
+
+// ─────────────────────────────────────────
+// INVESTMENT PLATFORM
+// Tracks each investment app (Groww, Zerodha, etc.)
+// Acts as a wallet — money added here gets reduced when investments are made.
+// ─────────────────────────────────────────
+model InvestmentPlatform {
+  id          String   @id @default(uuid())
+  name        String                         // e.g. "Groww", "Zerodha", "Post Office"
+  totalAdded  Float    @default(0)           // total money transferred into this platform
+  note        String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savings     Saving[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────
+// SAVING
+// An individual investment instrument.
+// Linked to a platform (Groww SIP) or standalone (Post Office PPF).
+// ─────────────────────────────────────────
+model Saving {
+  id             String      @id @default(uuid())
+  name           String                          // e.g. "Nifty 50 SIP", "PPF"
+  type           SavingType
+  investedAmount Float                           // principal invested
+  charges        Float       @default(0)         // brokerage, STT, GST etc.
+  currentValue   Float                           // latest known value (updated manually)
+  startDate      DateTime
+  maturityDate   DateTime?                       // for FD, RD, NSC etc.
+  note           String?
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  userId         String
+  platformId     String?                         // null = standalone (no platform wallet)
+
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform       InvestmentPlatform? @relation(fields: [platformId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([platformId])
+}
+
+enum SavingType {
+  POST_OFFICE       // PPF, NSC, KVP, MIS, POTD
+  FIXED_DEPOSIT     // Bank FDs
+  RECURRING_DEPOSIT // Bank RDs
+  STOCKS            // Direct equity (NSE/BSE)
+  MUTUAL_FUNDS      // SIPs, lumpsum MFs
+  GOLD              // Physical gold, SGB, Gold ETF
+  EPF               // Employee Provident Fund
+  NPS               // National Pension System
+  OTHER
+}
+
+// ─────────────────────────────────────────
+// NOTE
+// A single note — title, markdown content,
+// color, pin, archive, tags, optional reminder.
+// ─────────────────────────────────────────
+model Note {
+  id           String      @id @default(uuid())
+  title        String?                          // optional — some notes have no title
+  content      String      @default("")         // markdown text (supports - [ ] checklists)
+  color        String      @default("white")    // white/yellow/teal/pink/blue/purple/orange/green
+  isPinned     Boolean     @default(false)
+  isArchived   Boolean     @default(false)
+  isLocked     Boolean     @default(false)      // password-protected note
+  passwordHash String?                          // bcrypt hash — never exposed to client
+  tags         String[]                         // e.g. ["finance", "ideas"]
+  reminderAt   DateTime?                        // when to remind the user
+  reminderSent Boolean     @default(false)      // cron marks true after firing
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images       NoteImage[]
+
+  @@index([userId, isArchived])
+  @@index([userId, reminderAt, reminderSent])
+}
+
+// ─────────────────────────────────────────
+// NOTE IMAGE
+// Image attached to a note — stored as raw
+// binary in the DB (no external service needed).
+// ─────────────────────────────────────────
+model NoteImage {
+  id        String   @id @default(uuid())
+  data      Bytes                              // raw binary image data
+  mimeType  String                             // "image/jpeg", "image/png", etc.
+  name      String                             // original filename
+  size      Int                                // bytes — capped at 5 MB in the service
+
+  createdAt DateTime @default(now())
+
+  noteId    String
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+}

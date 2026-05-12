@@ -1,0 +1,58 @@
+import 'dotenv/config';
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';
+import helmet from 'helmet';
+
+// Crash immediately if any required environment variable is missing.
+// Better to fail loudly at boot than to fail silently during a real request.
+function validateEnv() {
+  const required = [
+    'DATABASE_URL',
+    'CLERK_SECRET_KEY',
+    'CLERK_PUBLISHABLE_KEY',
+  ];
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missing.join(', ')}\n` +
+      'Check your .env file.',
+    );
+  }
+}
+
+async function bootstrap() {
+  validateEnv();
+
+  const app = await NestFactory.create(AppModule);
+
+  // Helmet — sets ~15 secure HTTP response headers automatically.
+  // e.g. X-Content-Type-Options: nosniff, X-Frame-Options: DENY, etc.
+  app.use(helmet());
+
+  // CORS — only allow requests from our web and mobile apps
+  app.enableCors({
+    origin: true,  // Allow all origins in development
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
+
+  // Global ValidationPipe — applies to every @Body() in every controller.
+  //
+  // whitelist: true            — silently strips properties not in the DTO
+  // forbidNonWhitelisted: true — throws 400 if client sends unknown properties
+  // transform: true            — auto-converts plain JSON to DTO class instances
+  //                              (e.g. "5" → 5 when @IsNumber() is declared)
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  await app.listen(process.env.PORT ?? 4000, '0.0.0.0');
+  console.log(`API running on port ${process.env.PORT ?? 4000}`);
+}
+bootstrap();

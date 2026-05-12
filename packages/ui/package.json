@@ -1,0 +1,8 @@
+{
+  "name": "@income/ui",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "scripts": {
+    "lint": "eslint ."
+  }
+}
