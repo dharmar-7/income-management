@@ -22,10 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.yourname.prismfinance",
-      "permissions": [
-        "android.permission.READ_SMS",
-        "android.permission.RECEIVE_SMS"
-      ]
+      "permissions": []
     },
     "web": {
       "bundler": "metro",
