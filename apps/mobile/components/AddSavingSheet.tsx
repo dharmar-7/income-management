@@ -375,7 +375,7 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.sheetWrapper}
       >
         <View style={styles.sheet}>

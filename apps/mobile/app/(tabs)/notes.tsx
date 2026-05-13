@@ -28,6 +28,7 @@ interface Note {
   color: string;
   isPinned: boolean;
   isArchived: boolean;
+  isLocked: boolean;
   tags: string[];
   reminderAt: string | null;
   reminderSent: boolean;
@@ -78,6 +79,88 @@ async function cancelLocalNotification(noteId: string) {
   await Notifications.cancelScheduledNotificationAsync(noteId).catch(() => {});
 }
 
+// ─── Password Modal ─────────────────────────────────────────────────────────────
+
+function PasswordModal({
+  visible,
+  mode,
+  onClose,
+  onConfirm,
+}: {
+  visible: boolean;
+  mode: 'set' | 'enter' | 'remove';
+  onClose: () => void;
+  onConfirm: (password: string) => Promise<void>;
+}) {
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (visible) setPassword('');
+  }, [visible]);
+
+  async function handleConfirm() {
+    if (!password.trim()) {
+      Alert.alert('Required', 'Please enter a password.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await onConfirm(password.trim());
+    } catch (err: any) {
+      Alert.alert('Error', err.message ?? 'Operation failed. Check your password and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const title = mode === 'set' ? '🔒 Lock Note' : mode === 'remove' ? '🔓 Remove Lock' : '🔒 Protected Note';
+  const placeholder = mode === 'enter' ? 'Enter password to view' : 'Set a password';
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={passStyles.overlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={passStyles.box}>
+            <Text style={passStyles.title}>{title}</Text>
+            {mode === 'enter' && (
+              <Text style={passStyles.hint}>Enter the password to open this note.</Text>
+            )}
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder={placeholder}
+              placeholderTextColor="#9ca3af"
+              secureTextEntry
+              style={passStyles.input}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleConfirm}
+            />
+            <View style={passStyles.actions}>
+              <TouchableOpacity onPress={onClose} style={passStyles.cancelBtn}>
+                <Text style={passStyles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleConfirm}
+                disabled={loading}
+                style={[passStyles.confirmBtn, loading && { opacity: 0.6 }]}
+              >
+                {loading
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={passStyles.confirmText}>
+                      {mode === 'set' ? 'Lock' : mode === 'remove' ? 'Remove' : 'Open'}
+                    </Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Note Edit Sheet ────────────────────────────────────────────────────────────
 
 function NoteSheet({
@@ -87,6 +170,7 @@ function NoteSheet({
   onClose,
   onSave,
   onDelete,
+  onLockToggle,
 }: {
   note: Note | null;
   allTags: string[];
@@ -94,6 +178,7 @@ function NoteSheet({
   onClose: () => void;
   onSave: (data: any) => Promise<Note>;
   onDelete?: () => Promise<void>;
+  onLockToggle?: () => void;
 }) {
   const { getToken } = useAuth();
   const [title, setTitle] = useState('');
@@ -107,6 +192,9 @@ function NoteSheet({
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [lockModal, setLockModal] = useState<null | 'set' | 'remove'>(null);
+
+  const isLocked = note?.isLocked ?? false;
 
   useEffect(() => {
     if (visible) {
@@ -168,9 +256,28 @@ function NoteSheet({
       }
 
       onClose();
+    } catch (err: any) {
+      Alert.alert('Save failed', err.message ?? 'Could not save note. Check your connection.');
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleLockConfirm(password: string) {
+    if (!note?.id) return;
+    const token = await getToken();
+    if (lockModal === 'set') {
+      await apiFetch(`/notes/${note.id}/lock`, token!, {
+        method: 'POST', body: JSON.stringify({ password }),
+      });
+    } else {
+      await apiFetch(`/notes/${note.id}/remove-lock`, token!, {
+        method: 'POST', body: JSON.stringify({ password }),
+      });
+    }
+    setLockModal(null);
+    onLockToggle?.();
+    onClose();
   }
 
   async function handlePickImage() {
@@ -234,7 +341,7 @@ function NoteSheet({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.sheetWrapper}
       >
         <View
@@ -426,6 +533,14 @@ function NoteSheet({
                   <Text style={styles.deleteBtnText}>🗑️ Delete</Text>
                 </TouchableOpacity>
               )}
+              {note?.id && (
+                <TouchableOpacity
+                  onPress={() => setLockModal(isLocked ? 'remove' : 'set')}
+                  style={styles.lockBtn}
+                >
+                  <Text style={styles.lockBtnText}>{isLocked ? '🔓 Unlock' : '🔒 Lock'}</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 onPress={handleSave}
                 disabled={saving}
@@ -442,6 +557,13 @@ function NoteSheet({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      <PasswordModal
+        visible={lockModal !== null}
+        mode={lockModal ?? 'set'}
+        onClose={() => setLockModal(null)}
+        onConfirm={handleLockConfirm}
+      />
     </Modal>
   );
 }
@@ -455,11 +577,30 @@ export default function NotesScreen() {
   const [activeTag, setActiveTag] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [editNote, setEditNote] = useState<Note | null | 'new'>(null);
+  const [unlockingNote, setUnlockingNote] = useState<Note | null>(null);
 
   // Request notification permission on mount
   useEffect(() => {
     Notifications.requestPermissionsAsync();
   }, []);
+
+  function handleNotePress(note: Note) {
+    if (note.isLocked) {
+      setUnlockingNote(note);
+    } else {
+      setEditNote(note);
+    }
+  }
+
+  async function handleUnlockOpen(password: string) {
+    if (!unlockingNote) return;
+    const token = await getToken();
+    const unlocked = await apiFetch<Note>(`/notes/${unlockingNote.id}/unlock`, token!, {
+      method: 'POST', body: JSON.stringify({ password }),
+    });
+    setUnlockingNote(null);
+    setEditNote(unlocked);
+  }
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['notes'] });
@@ -477,6 +618,7 @@ export default function NotesScreen() {
       const endpoint = showArchived ? '/notes/archived' : `/notes?${params}`;
       return apiFetch<Note[]>(endpoint, token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: allTags = [] } = useQuery({
@@ -485,6 +627,7 @@ export default function NotesScreen() {
       const token = await getToken();
       return apiFetch<string[]>('/notes/tags', token!);
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   async function handleSave(data: any): Promise<Note> {
@@ -542,14 +685,17 @@ export default function NotesScreen() {
       <TouchableOpacity
         key={note.id}
         style={[styles.card, { backgroundColor: m ? 'transparent' : bg }, mirrorCardStyle]}
-        onPress={() => setEditNote(note)}
+        onPress={() => handleNotePress(note)}
         onLongPress={() => togglePin(note)}
         activeOpacity={0.85}
       >
         {m && <BlurView intensity={72} tint="light" style={StyleSheet.absoluteFill} />}
         {note.isPinned && <Text style={styles.pinnedIndicator}>📌</Text>}
+        {note.isLocked && <Text style={styles.cardLockBadge}>🔒 Protected</Text>}
         {note.title ? <Text style={styles.cardTitle} numberOfLines={1}>{note.title}</Text> : null}
-        {note.content ? (
+        {note.isLocked ? (
+          <Text style={[styles.cardContent, { color: '#9ca3af', fontStyle: 'italic' }]}>Tap to unlock</Text>
+        ) : note.content ? (
           <Text style={styles.cardContent} numberOfLines={6}>
             {note.content.replace(/[#*`\[\]]/g, '').trim()}
           </Text>
@@ -580,6 +726,13 @@ export default function NotesScreen() {
         <View style={styles.bgBlob3} />
       </View>
 
+      <PasswordModal
+        visible={unlockingNote !== null}
+        mode="enter"
+        onClose={() => setUnlockingNote(null)}
+        onConfirm={handleUnlockOpen}
+      />
+
       <NoteSheet
         note={editNote === 'new' ? null : editNote}
         allTags={allTags}
@@ -587,6 +740,7 @@ export default function NotesScreen() {
         onClose={() => setEditNote(null)}
         onSave={handleSave}
         onDelete={editNote && editNote !== 'new' ? handleDelete : undefined}
+        onLockToggle={invalidate}
       />
 
       {/* Search row */}
@@ -803,9 +957,30 @@ const styles = StyleSheet.create({
   tagSuggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   tagSuggestionText: { fontSize: 13, color: '#374151' },
 
-  sheetActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
+  sheetActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
   deleteBtn: { paddingHorizontal: 14, paddingVertical: 10 },
   deleteBtnText: { color: '#9ca3af', fontSize: 14 },
-  saveBtn: { backgroundColor: '#111827', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 10 },
+  lockBtn: { paddingHorizontal: 12, paddingVertical: 10 },
+  lockBtnText: { fontSize: 13, color: '#6b7280' },
+  saveBtn: { backgroundColor: '#111827', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 10, marginLeft: 'auto' },
   saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  cardLockBadge: { fontSize: 10, color: '#9ca3af', marginBottom: 2 },
+});
+
+const passStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 },
+  box: { backgroundColor: '#fff', borderRadius: 20, padding: 24 },
+  title: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8, textAlign: 'center' },
+  hint: { fontSize: 13, color: '#6b7280', marginBottom: 12, textAlign: 'center', lineHeight: 18 },
+  input: {
+    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 14, color: '#111827', marginBottom: 16,
+  },
+  actions: { flexDirection: 'row', gap: 10 },
+  cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  cancelText: { color: '#6b7280', fontWeight: '600', fontSize: 14 },
+  confirmBtn: { flex: 1, backgroundColor: '#111827', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  confirmText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

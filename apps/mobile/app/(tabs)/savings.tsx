@@ -95,6 +95,7 @@ export default function SavingsScreen() {
       const token = await getToken();
       return apiFetch<Summary>('/savings/summary', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const platformsQuery = useQuery({
@@ -103,6 +104,7 @@ export default function SavingsScreen() {
       const token = await getToken();
       return apiFetch<Platform[]>('/savings/platforms', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const savingsQuery = useQuery({
@@ -111,6 +113,7 @@ export default function SavingsScreen() {
       const token = await getToken();
       return apiFetch<Saving[]>('/savings', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const isRefreshing = summaryQuery.isFetching || savingsQuery.isFetching || platformsQuery.isFetching;

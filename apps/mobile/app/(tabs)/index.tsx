@@ -97,6 +97,7 @@ export default function DashboardScreen() {
       const token = await getToken();
       return apiFetch<Summary>('/transactions/summary', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const categoryQuery = useQuery({
@@ -105,6 +106,7 @@ export default function DashboardScreen() {
       const token = await getToken();
       return apiFetch<CategoryData[]>('/transactions/by-category', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const monthlyQuery = useQuery({
@@ -113,6 +115,7 @@ export default function DashboardScreen() {
       const token = await getToken();
       return apiFetch<MonthData[]>('/transactions/by-month', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const budgetsQuery = useQuery({
@@ -121,6 +124,7 @@ export default function DashboardScreen() {
       const token = await getToken();
       return apiFetch<BudgetsResponse>('/budgets', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const queryClient = useQueryClient();
@@ -132,6 +136,7 @@ export default function DashboardScreen() {
       const token = await getToken();
       return apiFetch<{ balance: number; totalIn: number; totalOut: number }>('/cash/balance', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const savingsQuery = useQuery({
@@ -140,6 +145,7 @@ export default function DashboardScreen() {
       const token = await getToken();
       return apiFetch<SavingsSummary>('/savings/summary', token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   const isRefreshing = summaryQuery.isFetching || categoryQuery.isFetching || monthlyQuery.isFetching;

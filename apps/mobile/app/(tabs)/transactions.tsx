@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
@@ -109,6 +110,7 @@ export default function TransactionsScreen() {
       const token = await getToken();
       return apiFetch<TransactionsResponse>(`/transactions?${params}`, token!);
     },
+    staleTime: 2 * 60 * 1000,
   });
 
   // Categories needed for the sheet
@@ -118,6 +120,7 @@ export default function TransactionsScreen() {
       const token = await getToken();
       return apiFetch<{ id: string; name: string; icon: string }[]>('/transactions/categories', token!);
     },
+    staleTime: 10 * 60 * 1000,
   });
 
   return (
@@ -147,7 +150,12 @@ export default function TransactionsScreen() {
 
       {/* Filter row: type chips + sort toggle */}
       <View style={styles.filterRow}>
-        <View style={styles.chips}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chips}
+          contentContainerStyle={{ gap: 8 }}
+        >
           {(['', 'DEBIT', 'CREDIT', 'REFUND', 'INVESTMENT'] as const).map(t => (
             <TouchableOpacity
               key={t}
@@ -159,7 +167,7 @@ export default function TransactionsScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         <TouchableOpacity
           onPress={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}
@@ -313,7 +321,7 @@ const styles = StyleSheet.create({
   clearBtnText: { color: '#9ca3af', fontSize: 14 },
 
   filterRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginBottom: 4 },
-  chips: { flexDirection: 'row', gap: 8, flex: 1 },
+  chips: { flex: 1 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 99,
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb',
