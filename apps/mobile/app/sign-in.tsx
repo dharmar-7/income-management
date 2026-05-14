@@ -158,7 +158,7 @@ export default function SignInScreen() {
           {/* Clarity text — answers the user's question directly */}
           <Text style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
             Already have an account? You'll be signed straight in.{'\n'}
-            New to Prism? Your account is created automatically.
+            New to Velora? Your account is created automatically.
           </Text>
         </View>
 
