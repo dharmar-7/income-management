@@ -31,7 +31,7 @@ export default function PrismLogo({
             backgroundClip: 'text',
           }}
         >
-          Prism
+          Velora
         </span>
       )}
     </span>
@@ -50,7 +50,7 @@ export function PrismIcon({ size = 28 }: { size?: number }) {
       viewBox="0 0 40 36"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Prism logo icon"
+      aria-label="Velora logo icon"
     >
       <defs>
         {/* Main prism body gradient */}

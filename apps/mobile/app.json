@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Prism",
-    "slug": "prism-finance",
+    "name": "Velora",
+    "slug": "velora-finance",
     "version": "1.0.0",
-    "scheme": "prism",
+    "scheme": "velora",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.prismfinance"
+      "bundleIdentifier": "com.yourname.velorafinance"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourname.prismfinance",
+      "package": "com.yourname.velorafinance",
       "permissions": []
     },
     "web": {

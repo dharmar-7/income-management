@@ -22,8 +22,8 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: "Prism — Your Financial Clarity",
-    template: "%s · Prism",
+    default: "Velora — Your Financial Clarity",
+    template: "%s · Velora",
   },
   description: "Track spending, set budgets, and see where every rupee goes.",
   icons: { icon: "/icon.svg" },

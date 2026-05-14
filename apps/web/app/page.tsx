@@ -87,7 +87,7 @@ export default function Home() {
         <p className="text-xs text-gray-400 text-center leading-relaxed">
           Already have an account? You&apos;ll be signed straight in.
           <br />
-          New to Prism? Your account is created automatically.
+          New to Velora? Your account is created automatically.
         </p>
       </div>
 

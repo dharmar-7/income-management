@@ -4,57 +4,49 @@ const SPECTRUM = ['#8b5cf6', '#6366f1', '#06b6d4', '#22c55e', '#f97316', '#f43f5
 
 interface Props {
   size?: 'sm' | 'md' | 'lg';
+  name?: string;
 }
 
-export default function PrismLogoMobile({ size = 'md' }: Props) {
+export default function PrismLogoMobile({ size = 'md', name = 'Velora' }: Props) {
   const scale = size === 'sm' ? 0.75 : size === 'lg' ? 1.35 : 1;
 
-  const triHalf = Math.round(14 * scale);   // half-height of triangle
-  const triBase = Math.round(20 * scale);   // width (depth) of triangle
-  const dotSize = Math.round(3 * scale);
-  const dotGap = Math.round(2.5 * scale);
-  const fontSize = Math.round(17 * scale);
-  const gap = Math.round(8 * scale);
+  const iconSize  = Math.round(28 * scale);
+  const dotSize   = Math.round(4 * scale);
+  const dotGap    = Math.round(2 * scale);
+  const fontSize  = Math.round(17 * scale);
+  const gap       = Math.round(8 * scale);
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap }}>
-      {/* ── Prism icon ── */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Math.round(4 * scale) }}>
-
-        {/* Input beam — thin line entering prism from left */}
+      {/* ── Prism icon — diamond rotated 45° ── */}
+      <View style={{ width: iconSize, height: iconSize, alignItems: 'center', justifyContent: 'center' }}>
+        {/* Diamond body */}
         <View style={{
-          width: Math.round(8 * scale),
-          height: 1.5,
-          backgroundColor: '#c4b5fd',
-          borderRadius: 1,
-          opacity: 0.7,
+          width: iconSize * 0.65,
+          height: iconSize * 0.65,
+          backgroundColor: '#6366f1',
+          borderRadius: 4 * scale,
+          transform: [{ rotate: '45deg' }],
+          position: 'absolute',
         }} />
-
-        {/* Prism body — right-pointing triangle via border hack */}
+        {/* Spectrum dots overlay — fanning from centre-right */}
         <View style={{
-          width: 0,
-          height: 0,
-          borderStyle: 'solid',
-          borderTopWidth: triHalf,
-          borderBottomWidth: triHalf,
-          borderLeftWidth: triBase,
-          borderRightWidth: 0,
-          borderTopColor: 'transparent',
-          borderBottomColor: 'transparent',
-          borderLeftColor: '#6366f1',
-        }} />
-
-        {/* Spectrum rays — 6 coloured dots fanning out */}
-        <View style={{ gap: dotGap, justifyContent: 'center' }}>
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          justifyContent: 'center',
+          gap: dotGap,
+        }}>
           {SPECTRUM.map((color, i) => (
             <View
               key={i}
               style={{
-                width: dotSize + (i < 3 ? 0 : 1),
+                width: dotSize,
                 height: dotSize,
                 borderRadius: dotSize / 2,
                 backgroundColor: color,
-                marginLeft: i < 2 ? 0 : i < 4 ? Math.round(1 * scale) : Math.round(2 * scale),
+                marginLeft: i < 2 ? 0 : i < 4 ? Math.round(2 * scale) : Math.round(4 * scale),
               }}
             />
           ))}
@@ -62,15 +54,13 @@ export default function PrismLogoMobile({ size = 'md' }: Props) {
       </View>
 
       {/* ── Wordmark ── */}
-      <Text
-        style={{
-          fontSize,
-          fontWeight: '700',
-          color: '#6366f1',
-          letterSpacing: -0.4,
-        }}
-      >
-        Prism
+      <Text style={{
+        fontSize,
+        fontWeight: '700',
+        color: '#6366f1',
+        letterSpacing: -0.4,
+      }}>
+        {name}
       </Text>
     </View>
   );
