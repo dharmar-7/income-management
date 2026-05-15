@@ -1,3 +1,6 @@
+// Primary logo: Faceted Crystal hexagon (Full Spectrum Rainbow)
+// Secondary export: ArcsIcon (Signal Arcs — Electric Trifecta) used for favicon / tiny sizes
+
 interface PrismLogoProps {
   size?: number;
   showWordmark?: boolean;
@@ -16,7 +19,7 @@ export default function PrismLogo({
 
   return (
     <span className="flex items-center gap-2 select-none">
-      <PrismIcon size={size} />
+      <CrystalIcon size={size} />
       {showWordmark && (
         <span
           style={{
@@ -25,7 +28,7 @@ export default function PrismLogo({
             fontWeight: 700,
             letterSpacing: '-0.02em',
             lineHeight: 1,
-            background: 'linear-gradient(90deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%)',
+            background: 'linear-gradient(90deg,#f72585,#ff9100,#ffd60a,#32d74b,#0a84ff,#bf5af2)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
@@ -38,119 +41,61 @@ export default function PrismLogo({
   );
 }
 
-export function PrismIcon({ size = 28 }: { size?: number }) {
-  // Viewbox: 40 × 36
-  // The prism is drawn as a side-view triangle pointing right.
-  // A white input beam enters from the left edge.
-  // Six spectrum rays fan out from the right vertex.
+// ── Faceted Crystal (primary — nav, splash, sign-in) ─────────────────────────
+// Regular hexagon, pointed-top, 6 triangular facets from center.
+// Vertices: (24,4) (41.3,14) (41.3,34) (24,44) (6.7,34) (6.7,14), center (24,24)
+export function CrystalIcon({ size = 28 }: { size?: number }) {
   return (
     <svg
       width={size}
-      height={Math.round(size * 0.9)}
-      viewBox="0 0 40 36"
+      height={size}
+      viewBox="0 0 48 48"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Velora logo icon"
+      aria-label="Velora"
     >
-      <defs>
-        {/* Main prism body gradient */}
-        <linearGradient id="prismBody" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#7c3aed" />
-          <stop offset="55%" stopColor="#6366f1" />
-          <stop offset="100%" stopColor="#4f46e5" />
-        </linearGradient>
-
-        {/* Prism face highlight */}
-        <linearGradient id="prismFace" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#818cf8" stopOpacity="0.1" />
-        </linearGradient>
-
-        {/* Glow filter on prism */}
-        <filter id="prismGlow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        {/* Soft glow on spectrum rays */}
-        <filter id="rayGlow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="0.6" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* ── Input beam (white, entering left edge) ── */}
-      <line
-        x1="0" y1="18"
-        x2="7" y2="18"
-        stroke="white"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        opacity="0.55"
-      />
-
-      {/* ── Prism body (side-view triangle, apex right) ── */}
-      {/* Back dark face for 3-D depth */}
+      <polygon points="24,24 24,4 41.3,14"    fill="#f72585" />
+      <polygon points="24,24 41.3,14 41.3,34" fill="#ff9100" />
+      <polygon points="24,24 41.3,34 24,44"   fill="#ffd60a" />
+      <polygon points="24,24 24,44 6.7,34"    fill="#32d74b" />
+      <polygon points="24,24 6.7,34 6.7,14"   fill="#0a84ff" />
+      <polygon points="24,24 6.7,14 24,4"     fill="#bf5af2" />
+      {/* facet edges */}
       <polygon
-        points="7,4 7,32 28,18"
-        fill="url(#prismBody)"
-        filter="url(#prismGlow)"
+        points="24,4 41.3,14 41.3,34 24,44 6.7,34 6.7,14"
+        fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.8"
       />
-      {/* Top-face highlight overlay */}
-      <polygon
-        points="7,4 7,18 28,18"
-        fill="url(#prismFace)"
-      />
-      {/* Thin edge lines for sharpness */}
-      <polyline
-        points="7,4 7,32 28,18 7,4"
-        stroke="#c4b5fd"
-        strokeWidth="0.6"
-        strokeLinejoin="round"
-        fill="none"
-        opacity="0.7"
-      />
-      {/* Inner vertical spine */}
-      <line
-        x1="7" y1="4"
-        x2="7" y2="32"
-        stroke="#a78bfa"
-        strokeWidth="0.5"
-        opacity="0.4"
-      />
-
-      {/* ── Spectrum rays fanning out from apex ── */}
-      {/* Each ray: a wider stroke that fades, + bright cap */}
-      {/* Violet */}
-      <line x1="28" y1="18" x2="40" y2="8"
-        stroke="#8b5cf6" strokeWidth="1.8" strokeLinecap="round"
-        opacity="0.9" filter="url(#rayGlow)" />
-      {/* Indigo */}
-      <line x1="28" y1="18" x2="40" y2="11.5"
-        stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round"
-        opacity="0.9" filter="url(#rayGlow)" />
-      {/* Cyan */}
-      <line x1="28" y1="18" x2="40" y2="15"
-        stroke="#06b6d4" strokeWidth="1.8" strokeLinecap="round"
-        opacity="0.9" filter="url(#rayGlow)" />
-      {/* Green */}
-      <line x1="28" y1="18" x2="40" y2="18.5"
-        stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round"
-        opacity="0.9" filter="url(#rayGlow)" />
-      {/* Orange */}
-      <line x1="28" y1="18" x2="40" y2="22"
-        stroke="#f97316" strokeWidth="1.8" strokeLinecap="round"
-        opacity="0.9" filter="url(#rayGlow)" />
-      {/* Rose */}
-      <line x1="28" y1="18" x2="40" y2="26"
-        stroke="#f43f5e" strokeWidth="1.8" strokeLinecap="round"
-        opacity="0.9" filter="url(#rayGlow)" />
+      <line x1="24"   y1="4"  x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
+      <line x1="41.3" y1="14" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
+      <line x1="41.3" y1="34" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
+      <line x1="24"   y1="44" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
+      <line x1="6.7"  y1="34" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
+      <line x1="6.7"  y1="14" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
+      {/* specular highlight top-right facet */}
+      <ellipse cx="29" cy="11" rx="5" ry="3" fill="rgba(255,255,255,0.24)" transform="rotate(-25,29,11)" />
     </svg>
   );
 }
+
+// ── Signal Arcs (secondary — favicon, 16px in-app micro icon) ────────────────
+// Three nested V-chevrons: Electric Trifecta palette (pink / indigo / green).
+// Shares the same hues as Crystal facets — same brand family.
+export function ArcsIcon({ size = 28 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 48 48"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Velora"
+    >
+      <path d="M 18,36 L 24,28 L 30,36" stroke="#ff2d55" strokeWidth="4.5"  strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M 10,40 L 24,18 L 38,40" stroke="#5e5ce6" strokeWidth="3.5"  strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M 3,43 L 24,10 L 45,43"  stroke="#32d74b" strokeWidth="2.5"  strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Keep old name as alias so any existing imports still compile
+export { CrystalIcon as PrismIcon };

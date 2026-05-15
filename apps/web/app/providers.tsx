@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../lib/api';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 // Syncs the signed-in Clerk user into our DB on first load.
 // POST /users/me is idempotent — safe to call on every sign-in.
@@ -35,9 +36,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }));
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <UserSync />
-      {children}
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <UserSync />
+        {children}
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
