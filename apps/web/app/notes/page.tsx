@@ -8,7 +8,7 @@ export default async function NotesPage() {
   if (!userId) redirect('/sign-in');
 
   return (
-    <main className="min-h-screen relative overflow-x-hidden" style={{ backgroundColor: '#f9fafb' }}>
+    <main className="min-h-screen relative overflow-x-hidden">
       {/* Vivid background blobs — the glass cards blur these to create liquid glass effect */}
       <div className="fixed inset-0 pointer-events-none" aria-hidden>
         <div className="absolute top-16 -left-16 w-[560px] h-[560px] rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 65%)' }} />
@@ -19,8 +19,8 @@ export default async function NotesPage() {
       <AppNav />
       <div className="relative max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Notes</h1>
-          <p className="text-gray-500 mt-1">Capture ideas, checklists, and reminders.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notes</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Capture ideas, checklists, and reminders.</p>
         </div>
         <NotesManager />
       </div>

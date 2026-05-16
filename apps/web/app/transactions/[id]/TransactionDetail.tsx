@@ -99,21 +99,21 @@ export default function TransactionDetail({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 animate-pulse space-y-4">
-        <div className="h-6 bg-gray-100 rounded w-48" />
-        <div className="h-10 bg-gray-100 rounded w-32" />
-        <div className="h-4 bg-gray-100 rounded w-24" />
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 animate-pulse space-y-4">
+        <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded w-48" />
+        <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded w-32" />
+        <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-24" />
       </div>
     );
   }
 
   if (error || !tx) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-        <p className="text-gray-400 text-sm">Transaction not found.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+        <p className="text-gray-400 dark:text-gray-500 text-sm">Transaction not found.</p>
         <button
           onClick={() => router.back()}
-          className="mt-4 text-sm text-gray-500 hover:text-gray-900 underline"
+          className="mt-4 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline"
         >
           Go back
         </button>
@@ -124,14 +124,14 @@ export default function TransactionDetail({ id }: { id: string }) {
   return (
     <div className="space-y-4">
       {/* Header card */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8">
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
+          <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-2xl flex-shrink-0">
             {tx.category?.icon ?? '📦'}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-gray-900">{tx.merchant}</h2>
-            <p className="text-sm text-gray-400 mt-0.5">{formatDate(tx.date)}</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{tx.merchant}</h2>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{formatDate(tx.date)}</p>
           </div>
           <div className={`text-2xl font-bold flex-shrink-0 ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
             {tx.type === 'CREDIT' ? '+' : '-'}{formatINR(tx.amount)}
@@ -140,24 +140,24 @@ export default function TransactionDetail({ id }: { id: string }) {
 
         <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-gray-400">Type</p>
-            <p className="font-medium mt-0.5">
+            <p className="text-gray-400 dark:text-gray-500">Type</p>
+            <p className="font-medium mt-0.5 dark:text-white">
               {tx.type === 'CREDIT' ? 'Income' : 'Expense'}
             </p>
           </div>
           <div>
-            <p className="text-gray-400">Category</p>
-            <p className="font-medium mt-0.5">
+            <p className="text-gray-400 dark:text-gray-500">Category</p>
+            <p className="font-medium mt-0.5 dark:text-white">
               {tx.category ? `${tx.category.icon} ${tx.category.name}` : 'Uncategorized'}
             </p>
           </div>
           <div>
-            <p className="text-gray-400">Source</p>
-            <p className="font-medium mt-0.5 capitalize">{tx.source.toLowerCase().replace('_', ' ')}</p>
+            <p className="text-gray-400 dark:text-gray-500">Source</p>
+            <p className="font-medium mt-0.5 capitalize dark:text-white">{tx.source.toLowerCase().replace('_', ' ')}</p>
           </div>
           <div>
-            <p className="text-gray-400">Note</p>
-            <p className="font-medium mt-0.5 text-gray-700">
+            <p className="text-gray-400 dark:text-gray-500">Note</p>
+            <p className="font-medium mt-0.5 text-gray-700 dark:text-gray-300">
               {tx.description ?? <span className="text-gray-400 font-normal">None</span>}
             </p>
           </div>
@@ -165,13 +165,13 @@ export default function TransactionDetail({ id }: { id: string }) {
       </div>
 
       {/* Edit card */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-800">Edit Details</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-100">Edit Details</h3>
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="text-sm text-gray-500 hover:text-gray-900 border border-gray-200 rounded-full px-3 py-1"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-gray-600 rounded-full px-3 py-1"
             >
               Edit
             </button>
@@ -181,7 +181,7 @@ export default function TransactionDetail({ id }: { id: string }) {
         {isEditing ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-500 mb-1">Category</label>
+              <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Category</label>
               <CustomSelect
                 value={selectedCategory}
                 onChange={v => setSelectedCategory(v)}
@@ -194,13 +194,13 @@ export default function TransactionDetail({ id }: { id: string }) {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-500 mb-1">Note</label>
+              <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Note</label>
               <textarea
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 rows={3}
                 placeholder="Add a note..."
-                className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gray-400 resize-none"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gray-400 resize-none"
               />
             </div>
 
@@ -211,7 +211,7 @@ export default function TransactionDetail({ id }: { id: string }) {
                   setNote(tx.description ?? '');
                   setIsEditing(false);
                 }}
-                className="rounded-full border border-gray-200 px-4 py-2 text-sm hover:bg-gray-50"
+                className="rounded-full border border-gray-200 dark:border-gray-600 dark:text-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Cancel
               </button>
@@ -229,7 +229,7 @@ export default function TransactionDetail({ id }: { id: string }) {
             )}
           </div>
         ) : (
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-400 dark:text-gray-500">
             Click Edit to update the category or add a note to this transaction.
           </p>
         )}

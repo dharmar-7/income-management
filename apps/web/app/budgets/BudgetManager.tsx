@@ -121,7 +121,7 @@ export default function BudgetManager() {
   return (
     <div className="space-y-4">
       {/* Month picker */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-3">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-3">
         <CustomSelect
           value={String(month)}
           onChange={v => setMonth(Number(v))}
@@ -136,31 +136,31 @@ export default function BudgetManager() {
             value: String(y), label: String(y),
           }))}
         />
-        <span className="text-sm text-gray-400 ml-auto">
+        <span className="text-sm text-gray-400 dark:text-gray-500 ml-auto">
           {data?.data.length ?? 0} budget{data?.data.length !== 1 ? 's' : ''} set
         </span>
       </div>
 
       {/* Budget list */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {isLoading ? (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="px-6 py-5 animate-pulse space-y-2">
                 <div className="flex justify-between">
-                  <div className="h-4 bg-gray-100 rounded w-28" />
-                  <div className="h-4 bg-gray-100 rounded w-20" />
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-28" />
+                  <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-20" />
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full" />
+                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full" />
               </div>
             ))}
           </div>
         ) : data?.data.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-gray-400">
+          <div className="px-6 py-12 text-center text-sm text-gray-400 dark:text-gray-500">
             No budgets set for {MONTHS[month - 1]} {year}. Add one below.
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {data?.data.map(budget => {
               const isOver = budget.percentUsed >= 100;
               const isWarning = budget.percentUsed >= 80 && !isOver;
@@ -176,17 +176,17 @@ export default function BudgetManager() {
                     <span className="text-lg">{budget.category.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 text-sm">
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">
                           {budget.category.name}
                         </span>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             {formatINR(budget.spent)} of {formatINR(budget.amount)}
                           </span>
                           <button
                             onClick={() => deleteMutation.mutate(budget.id)}
                             disabled={deleteMutation.isPending}
-                            className="text-xs text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
+                            className="text-xs text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors cursor-pointer"
                           >
                             Remove
                           </button>
@@ -196,14 +196,14 @@ export default function BudgetManager() {
                   </div>
 
                   {/* Progress bar */}
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${barColor}`}
                       style={{ width: `${budget.percentUsed}%` }}
                     />
                   </div>
 
-                  <div className="flex justify-between mt-1.5 text-xs text-gray-400">
+                  <div className="flex justify-between mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                     <span>
                       {isOver
                         ? `${formatINR(Math.abs(budget.remaining))} over budget`
@@ -223,20 +223,20 @@ export default function BudgetManager() {
         <button
           onClick={() => setShowForm(true)}
           disabled={availableCategories.length === 0}
-          className="w-full rounded-2xl border-2 border-dashed border-gray-200 py-4 text-sm text-gray-400 hover:border-gray-300 hover:text-gray-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-4 text-sm text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           + Set a budget for another category
         </button>
       ) : (
         <form
           onSubmit={handleAdd}
-          className="bg-white rounded-2xl border border-gray-200 p-5 space-y-4"
+          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 space-y-4"
         >
-          <h3 className="font-semibold text-gray-800 text-sm">New Budget</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">New Budget</h3>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Category</label>
+              <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">Category</label>
               <CustomSelect
                 value={formCategoryId}
                 onChange={v => setFormCategoryId(v)}
@@ -246,7 +246,7 @@ export default function BudgetManager() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-400 mb-1">Monthly limit (₹)</label>
+              <label className="block text-xs text-gray-400 dark:text-gray-500 mb-1">Monthly limit (₹)</label>
               <input
                 type="number"
                 min="1"
@@ -255,7 +255,7 @@ export default function BudgetManager() {
                 onChange={e => setFormAmount(e.target.value)}
                 placeholder="e.g. 5000"
                 required
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-gray-400"
               />
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function BudgetManager() {
             <button
               type="button"
               onClick={() => { setShowForm(false); setFormCategoryId(''); setFormAmount(''); }}
-              className="rounded-full border border-gray-200 px-4 py-2 text-sm hover:bg-gray-50"
+              className="rounded-full border border-gray-200 dark:border-gray-600 dark:text-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Cancel
             </button>

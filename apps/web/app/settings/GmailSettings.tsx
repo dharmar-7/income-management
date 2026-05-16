@@ -77,12 +77,12 @@ export default function GmailSettings() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
       <div className="flex items-center gap-3 mb-6">
         <div className="text-3xl">📧</div>
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Gmail Integration</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Gmail Integration</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Auto-sync Google Pay transactions from your Gmail every hour.
           </p>
         </div>
@@ -98,7 +98,7 @@ export default function GmailSettings() {
       {/* Status */}
       <div className="flex items-center gap-2 mb-6">
         <div className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-300'}`} />
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 dark:text-gray-300">
           {connected === null
             ? 'Checking status...'
             : connected
@@ -144,7 +144,7 @@ export default function GmailSettings() {
       )}
 
       {/* Info box */}
-      <div className="mt-6 rounded-xl bg-gray-50 p-4 text-sm text-gray-500 space-y-1">
+      <div className="mt-6 rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4 text-sm text-gray-500 dark:text-gray-400 space-y-1">
         <p>🔒 We only request <strong>read-only</strong> access to your Gmail.</p>
         <p>📩 We only read emails from <strong>Google Pay</strong> — nothing else.</p>
         <p>🗑️ You can disconnect at any time and your tokens will be deleted.</p>

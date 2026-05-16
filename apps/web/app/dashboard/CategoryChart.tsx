@@ -60,13 +60,13 @@ export default function CategoryChart() {
   const total = chartData.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-200">
-      <h3 className="font-semibold text-gray-800 mb-4">Spending by Category</h3>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+      <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Spending by Category</h3>
 
       {isLoading ? (
-        <div className="h-60 bg-gray-100 animate-pulse rounded-xl" />
+        <div className="h-60 bg-gray-100 dark:bg-gray-700 animate-pulse rounded-xl" />
       ) : chartData.length === 0 ? (
-        <div className="h-48 flex items-center justify-center text-sm text-gray-400">
+        <div className="h-48 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
           No spending data yet. Import transactions to see breakdown.
         </div>
       ) : (
@@ -101,8 +101,8 @@ export default function CategoryChart() {
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: COLORS[i % COLORS.length] }}
                   />
-                  <span className="text-gray-600 truncate flex-1">{d.name}</span>
-                  <span className="text-gray-400 text-xs font-medium">{pct}%</span>
+                  <span className="text-gray-600 dark:text-gray-300 truncate flex-1">{d.name}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs font-medium">{pct}%</span>
                 </div>
               );
             })}

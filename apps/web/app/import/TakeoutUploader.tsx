@@ -89,7 +89,7 @@ export default function TakeoutUploader() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
       {/* Drop Zone */}
       {status === 'idle' && (
         <div
@@ -100,16 +100,16 @@ export default function TakeoutUploader() {
           className={`
             border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors
             ${isDragging
-              ? 'border-black bg-gray-50'
-              : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+              ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-700'
+              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }
           `}
         >
           <div className="text-4xl mb-3">📂</div>
-          <p className="font-medium text-gray-700">
+          <p className="font-medium text-gray-700 dark:text-gray-200">
             Drag & drop your Takeout JSON file here
           </p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             or click to browse — max 50MB
           </p>
           <input
@@ -126,8 +126,8 @@ export default function TakeoutUploader() {
       {status === 'uploading' && (
         <div className="text-center py-12">
           <div className="text-4xl mb-4 animate-pulse">⏳</div>
-          <p className="font-medium text-gray-700">Importing your transactions...</p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="font-medium text-gray-700 dark:text-gray-200">Importing your transactions...</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
             This may take a moment for large files.
           </p>
         </div>
@@ -138,8 +138,8 @@ export default function TakeoutUploader() {
         <div>
           <div className="text-center mb-6">
             <div className="text-4xl mb-3">✅</div>
-            <h3 className="text-xl font-bold text-gray-900">Import Complete!</h3>
-            <p className="text-gray-500 mt-1">{result.message}</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Import Complete!</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">{result.message}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 mb-6">
@@ -166,7 +166,7 @@ export default function TakeoutUploader() {
             </a>
             <button
               onClick={reset}
-              className="flex-1 rounded-full border border-gray-300 py-3 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 py-3 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Import Another File
             </button>
@@ -178,7 +178,7 @@ export default function TakeoutUploader() {
       {status === 'error' && (
         <div className="text-center py-8">
           <div className="text-4xl mb-3">❌</div>
-          <h3 className="font-semibold text-gray-900 mb-1">Import Failed</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Import Failed</h3>
           <p className="text-sm text-red-600 mb-6">{error}</p>
           <button
             onClick={reset}

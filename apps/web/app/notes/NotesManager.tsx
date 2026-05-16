@@ -126,7 +126,7 @@ function NoteModal({
   const noteId = note?.id;
   const c = colorClasses(color);
   const isMirror = color === 'mirror';
-  const lbl = isMirror ? 'text-gray-900' : 'text-gray-400';
+  const lbl = isMirror ? 'text-gray-900 dark:text-white' : 'text-gray-400';
   function onReminderChange(date: Date | null) { setReminderAt(date); }
   const filteredSuggestions = allTags.filter(
     t => t.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(t)
@@ -242,15 +242,15 @@ function NoteModal({
             placeholder="Title"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            className="flex-1 bg-transparent text-lg font-semibold text-gray-900 placeholder-gray-400 outline-none"
+            className={`flex-1 bg-transparent text-lg font-semibold text-gray-900 ${isMirror ? 'dark:text-white' : ''} placeholder-gray-400 ${isMirror ? 'dark:placeholder-gray-300' : ''} outline-none`}
           />
           <button
             onClick={() => setPreview(p => !p)}
-            className="text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 transition-colors"
+            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${isMirror ? 'border-white/40 text-gray-900 dark:text-white hover:bg-white/20' : 'border-gray-300 text-gray-500 hover:bg-gray-100'}`}
           >
             {preview ? '✏️ Edit' : '👁 Preview'}
           </button>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <button onClick={onClose} className={`text-gray-400 hover:text-gray-600 ${isMirror ? 'dark:text-gray-200 dark:hover:text-white' : ''} text-xl`}>✕</button>
         </div>
 
         {/* Content */}
@@ -294,7 +294,7 @@ function NoteModal({
               placeholder={`Write your note here...\n\nTip: Use markdown!\n**bold**  *italic*  # Heading\n- [ ] Checklist item\n- [x] Checked item`}
               value={content}
               onChange={e => setContent(e.target.value)}
-              className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none resize-none min-h-48"
+              className={`w-full bg-transparent text-sm text-gray-800 ${isMirror ? 'dark:text-white' : ''} placeholder-gray-400 ${isMirror ? 'dark:placeholder-gray-300' : ''} outline-none resize-none min-h-48`}
               rows={10}
             />
           )}
@@ -367,7 +367,7 @@ function NoteModal({
                   if (e.key === 'Escape') setShowTagSuggestions(false);
                 }}
                 onFocus={() => setShowTagSuggestions(true)}
-                className={`text-sm bg-transparent outline-none w-20 ${isMirror ? 'text-gray-900 placeholder-gray-700' : 'text-gray-600 placeholder-gray-400'}`}
+                className={`text-sm bg-transparent outline-none w-20 ${isMirror ? 'text-gray-900 dark:text-white placeholder-gray-700 dark:placeholder-gray-300' : 'text-gray-600 placeholder-gray-400'}`}
               />
             </div>
             {showTagSuggestions && filteredSuggestions.length > 0 && (
@@ -400,14 +400,14 @@ function NoteModal({
                 minDate={new Date()}
                 placeholderText="Pick date & time"
                 popperPlacement="top-start"
-                className="text-sm text-gray-700 outline-none cursor-pointer bg-transparent w-40"
+                className={`text-sm outline-none cursor-pointer bg-transparent w-40 ${isMirror ? 'text-gray-900 dark:text-white' : 'text-gray-700'}`}
                 calendarClassName="!rounded-2xl !shadow-xl !border-gray-100"
               />
             </div>
             {reminderAt && (
               <button
                 onClick={() => setReminderAt(null)}
-                className="text-sm text-gray-400 hover:text-gray-600"
+                className={`text-sm ${isMirror ? 'text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}
               >
                 Clear
               </button>
@@ -421,7 +421,7 @@ function NoteModal({
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className={`text-sm flex items-center gap-1.5 disabled:opacity-50 ${isMirror ? 'text-gray-900 hover:text-black' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`text-sm flex items-center gap-1.5 disabled:opacity-50 ${isMirror ? 'text-gray-900 dark:text-white hover:text-black dark:hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 🖼️ {uploading ? 'Uploading…' : 'Add image'}
               </button>
@@ -455,7 +455,7 @@ function NoteModal({
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className={`px-4 py-2 text-sm rounded-xl transition-colors ${isMirror ? 'text-gray-900 hover:bg-white/40' : 'text-gray-500 hover:bg-gray-100'}`}
+                className={`px-4 py-2 text-sm rounded-xl transition-colors ${isMirror ? 'text-gray-900 dark:text-white hover:bg-white/40' : 'text-gray-500 hover:bg-gray-100'}`}
               >
                 Cancel
               </button>
@@ -577,12 +577,12 @@ function NoteCard({ note, onClick }: { note: Note; onClick: () => void }) {
         </div>
       </div>
       {note.title && (
-        <h3 className="font-semibold text-gray-900 mb-1 text-sm">{note.title}</h3>
+        <h3 className={`font-semibold mb-1 text-sm ${isMirror ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>{note.title}</h3>
       )}
       {note.isLocked ? (
         <div className="text-xs text-gray-400 italic">Protected note</div>
       ) : preview ? (
-        <div className="text-xs text-gray-700 whitespace-pre-wrap line-clamp-6">
+        <div className={`text-xs whitespace-pre-wrap line-clamp-6 ${isMirror ? 'text-gray-700 dark:text-gray-100' : 'text-gray-700'}`}>
           {preview}{note.content.length > 200 ? '…' : ''}
         </div>
       ) : null}
@@ -590,7 +590,7 @@ function NoteCard({ note, onClick }: { note: Note; onClick: () => void }) {
         <div className="mt-2 flex gap-1">
           <img src={note.images[0].dataUrl} alt="" className="w-16 h-16 object-cover rounded-lg" />
           {note.images.length > 1 && (
-            <div className="w-16 h-16 bg-white/50 rounded-lg flex items-center justify-center text-xs text-gray-600">
+            <div className="w-16 h-16 bg-white/50 dark:bg-white/20 rounded-lg flex items-center justify-center text-xs text-gray-600 dark:text-gray-200">
               +{note.images.length - 1}
             </div>
           )}

@@ -8,10 +8,10 @@ export default async function SettingsPage() {
   if (!userId) redirect('/sign-in');
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen">
       <AppNav />
       <div className="max-w-2xl mx-auto py-8 px-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Settings</h1>
         <GmailSettings />
       </div>
     </main>

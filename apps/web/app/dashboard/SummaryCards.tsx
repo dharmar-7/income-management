@@ -35,7 +35,7 @@ export default function SummaryCards() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[1, 2, 3].map(i => (
-          <div key={i} className="rounded-2xl p-6 animate-pulse bg-gray-100 h-28" />
+          <div key={i} className="rounded-2xl p-6 animate-pulse bg-gray-100 dark:bg-gray-700 h-28" />
         ))}
       </div>
     );
@@ -43,7 +43,7 @@ export default function SummaryCards() {
 
   if (error || !data) {
     return (
-      <div className="bg-white rounded-2xl p-6 border border-gray-200 text-sm text-gray-500">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
         Could not load summary. Make sure you have imported some transactions.
       </div>
     );

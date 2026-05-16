@@ -15,15 +15,15 @@ export default async function DashboardPage() {
   const user = await currentUser();
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen">
       <AppNav />
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Welcome back, {user?.firstName ?? 'there'}!
           </h2>
-          <p className="text-gray-500 mt-1">Here's your financial summary for this month.</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Here's your financial summary for this month.</p>
         </div>
 
         {/* Summary cards — income, expenses, savings */}

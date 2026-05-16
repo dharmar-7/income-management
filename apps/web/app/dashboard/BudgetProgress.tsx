@@ -44,10 +44,10 @@ export default function BudgetProgress() {
   });
 
   return (
-    <div className="bg-white rounded-2xl p-6 border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-800">Budget This Month</h3>
-        <Link href="/budgets" className="text-xs text-gray-400 hover:text-gray-700">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100">Budget This Month</h3>
+        <Link href="/budgets" className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
           Manage →
         </Link>
       </div>
@@ -56,17 +56,17 @@ export default function BudgetProgress() {
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
             <div key={i} className="animate-pulse space-y-1">
-              <div className="h-3 bg-gray-100 rounded w-24" />
-              <div className="h-2 bg-gray-100 rounded-full" />
+              <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-24" />
+              <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full" />
             </div>
           ))}
         </div>
       ) : !data || data.data.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="text-sm text-gray-400 mb-3">No budgets set for this month.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">No budgets set for this month.</p>
           <Link
             href="/budgets"
-            className="text-sm text-black underline underline-offset-2 hover:text-gray-600"
+            className="text-sm text-black dark:text-white underline underline-offset-2 hover:text-gray-600 dark:hover:text-gray-300"
           >
             Set your first budget
           </Link>
@@ -85,14 +85,14 @@ export default function BudgetProgress() {
             return (
               <div key={budget.id}>
                 <div className="flex items-center justify-between text-sm mb-1.5">
-                  <span className="text-gray-700">
+                  <span className="text-gray-700 dark:text-gray-200">
                     {budget.category.icon} {budget.category.name}
                   </span>
-                  <span className={isOver ? 'text-red-500 font-medium' : 'text-gray-400'}>
+                  <span className={isOver ? 'text-red-500 font-medium' : 'text-gray-400 dark:text-gray-500'}>
                     {formatINR(budget.spent)} / {formatINR(budget.amount)}
                   </span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${barColor}`}
                     style={{ width: `${budget.percentUsed}%` }}
@@ -103,7 +103,7 @@ export default function BudgetProgress() {
           })}
 
           {data.data.length > 5 && (
-            <Link href="/budgets" className="block text-xs text-center text-gray-400 hover:text-gray-600 pt-1">
+            <Link href="/budgets" className="block text-xs text-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 pt-1">
               +{data.data.length - 5} more budgets
             </Link>
           )}

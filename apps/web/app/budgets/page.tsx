@@ -8,10 +8,10 @@ export default async function BudgetsPage() {
   if (!userId) redirect('/sign-in');
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen">
       <AppNav />
       <div className="max-w-3xl mx-auto px-6 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Monthly Budgets</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Monthly Budgets</h2>
         <BudgetManager />
       </div>
     </main>

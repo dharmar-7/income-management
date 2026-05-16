@@ -8,7 +8,7 @@ export default async function TransactionsPage() {
   if (!userId) redirect('/sign-in');
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen">
       <AppNav />
       <div className="max-w-5xl mx-auto px-6 py-8">
         <TransactionList />

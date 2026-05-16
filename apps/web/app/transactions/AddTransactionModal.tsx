@@ -64,27 +64,27 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Add Transaction</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Transaction</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none">
             ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Type toggle */}
-          <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+          <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
             <button
               type="button"
               onClick={() => setType('DEBIT')}
               className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
                 type === 'DEBIT'
                   ? 'bg-rose-500 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               💸 Expense
@@ -95,7 +95,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
               className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
                 type === 'CREDIT'
                   ? 'bg-emerald-500 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               💰 Income
@@ -106,7 +106,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
               className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
                 type === 'REFUND'
                   ? 'bg-teal-500 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               ↩️ Refund
@@ -117,7 +117,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
               className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
                 type === 'INVESTMENT'
                   ? 'bg-indigo-500 text-white'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               📊 Investment
@@ -126,7 +126,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
 
           {/* Amount */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Amount (₹)</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Amount (₹)</label>
             <input
               type="number"
               min="0.01"
@@ -135,13 +135,13 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
               value={amount}
               onChange={e => setAmount(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
 
           {/* Merchant */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
               {type === 'DEBIT' ? 'Merchant / Paid to'
                 : type === 'REFUND' ? 'Refunded by'
                 : type === 'INVESTMENT' ? 'Platform / App'
@@ -157,13 +157,13 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
               onChange={e => setMerchant(e.target.value)}
               required
               maxLength={200}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
 
           {/* Category chips */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-2">Category</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Category</label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -171,7 +171,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   !categoryId
                     ? 'bg-violet-600 text-white border-violet-600'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
+                    : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-violet-300 hover:text-violet-600'
                 }`}
               >
                 📦 Uncategorized
@@ -184,7 +184,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     categoryId === c.id
                       ? 'bg-violet-600 text-white border-violet-600'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
+                      : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-violet-300 hover:text-violet-600'
                   }`}
                 >
                   {c.icon} {c.name}
@@ -195,21 +195,21 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
 
           {/* Date */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Date</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Date</label>
             <input
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
               required
               max={new Date().toISOString().slice(0, 10)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
 
           {/* Note */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
-              Note <span className="text-gray-300">(optional)</span>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+              Note <span className="text-gray-300 dark:text-gray-600">(optional)</span>
             </label>
             <input
               type="text"
@@ -217,7 +217,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
               value={description}
               onChange={e => setDescription(e.target.value)}
               maxLength={500}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
 
@@ -230,7 +230,7 @@ export default function AddTransactionModal({ categories, onClose, onSuccess }: 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50"
+              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Cancel
             </button>

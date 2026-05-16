@@ -26,7 +26,6 @@ export const metadata: Metadata = {
     template: "%s · Velora",
   },
   description: "Track spending, set budgets, and see where every rupee goes.",
-  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({

@@ -113,17 +113,17 @@ function AddPlatformModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Add Investment Platform</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Investment Platform</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl">✕</button>
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           A platform is your in-app wallet (e.g. Groww, Zerodha). Add the total amount you transferred into it.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Platform Name</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Platform Name</label>
             <input
               type="text"
               placeholder="e.g. Groww, Zerodha, Post Office"
@@ -131,11 +131,11 @@ function AddPlatformModal({ onClose, onSuccess }: { onClose: () => void; onSucce
               onChange={e => setName(e.target.value)}
               required
               maxLength={100}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Total Transferred In (₹)</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Total Transferred In (₹)</label>
             <input
               type="number"
               min="0.01"
@@ -144,23 +144,23 @@ function AddPlatformModal({ onClose, onSuccess }: { onClose: () => void; onSucce
               value={totalAdded}
               onChange={e => setTotalAdded(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Note <span className="text-gray-300">(optional)</span></label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Note <span className="text-gray-300">(optional)</span></label>
             <input
               type="text"
               placeholder="e.g. Primary brokerage account"
               value={note}
               onChange={e => setNote(e.target.value)}
               maxLength={300}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
           {error && <p className="text-xs text-rose-500">{error}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
               Cancel
             </button>
             <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
@@ -204,15 +204,15 @@ function TopUpPlatformModal({ platform, onClose, onSuccess }: { platform: Platfo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Top Up {platform.name}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Top Up {platform.name}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl">✕</button>
         </div>
-        <p className="text-sm text-gray-500">Current balance: <span className="font-semibold text-gray-900">{formatINR(platform.balance)}</span></p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Current balance: <span className="font-semibold text-gray-900 dark:text-white">{formatINR(platform.balance)}</span></p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Add Amount (₹)</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Add Amount (₹)</label>
             <input
               type="number"
               min="1"
@@ -221,12 +221,12 @@ function TopUpPlatformModal({ platform, onClose, onSuccess }: { platform: Platfo
               value={addAmount}
               onChange={e => setAddAmount(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
           {error && <p className="text-xs text-rose-500">{error}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
               Cancel
             </button>
             <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
@@ -297,16 +297,16 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Add Investment</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Add Investment</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Type chips */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-2">Type</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Type</label>
             <div className="flex flex-wrap gap-2">
               {SAVING_TYPE_OPTIONS.map(opt => (
                 <button
@@ -316,7 +316,7 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     savingType === opt.value
                       ? 'bg-violet-600 text-white border-violet-600'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
+                      : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-violet-300 hover:text-violet-600'
                   }`}
                 >
                   {opt.icon} {opt.label}
@@ -327,7 +327,7 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
 
           {/* Name */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Investment Name</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Investment Name</label>
             <input
               type="text"
               placeholder="e.g. Nifty 50 SIP, PPF, SGB 2025"
@@ -335,14 +335,14 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
               onChange={e => setName(e.target.value)}
               required
               maxLength={200}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
 
           {/* Amounts row */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">Invested (₹)</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Invested (₹)</label>
               <input
                 type="number"
                 min="0.01"
@@ -351,11 +351,11 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
                 value={investedAmount}
                 onChange={e => handleInvestedChange(e.target.value)}
                 required
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">Charges (₹)</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Charges (₹)</label>
               <input
                 type="number"
                 min="0"
@@ -363,11 +363,11 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
                 placeholder="0.00"
                 value={charges}
                 onChange={e => setCharges(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">Current Value (₹)</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Current Value (₹)</label>
               <input
                 type="number"
                 min="0"
@@ -376,7 +376,7 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
                 value={currentValue}
                 onChange={e => setCurrentValue(e.target.value)}
                 required
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
               />
             </div>
           </div>
@@ -384,25 +384,25 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
           {/* Dates row */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">Start Date</label>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Start Date</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
                 required
                 max={todayISO()}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
                 Maturity Date <span className="text-gray-300">(optional)</span>
               </label>
               <input
                 type="date"
                 value={maturityDate}
                 onChange={e => setMaturityDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet-400"
               />
             </div>
           </div>
@@ -410,8 +410,8 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
           {/* Platform (optional) */}
           {platforms.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-2">
-                Platform <span className="text-gray-300">(optional — deducts from platform balance)</span>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                Platform <span className="text-gray-300 dark:text-gray-600">(optional — deducts from platform balance)</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -420,7 +420,7 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     !platformId
                       ? 'bg-violet-600 text-white border-violet-600'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300'
+                      : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-violet-300'
                   }`}
                 >
                   No platform
@@ -433,7 +433,7 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                       platformId === p.id
                         ? 'bg-violet-600 text-white border-violet-600'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300'
+                        : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-violet-300'
                     }`}
                   >
                     {p.name} <span className="opacity-60">(bal {formatINR(p.balance)})</span>
@@ -445,7 +445,7 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
 
           {/* Note */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
               Note <span className="text-gray-300">(optional)</span>
             </label>
             <input
@@ -454,14 +454,14 @@ function AddSavingModal({ platforms, onClose, onSuccess }: { platforms: Platform
               value={note}
               onChange={e => setNote(e.target.value)}
               maxLength={300}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
 
           {error && <p className="text-xs text-rose-500">{error}</p>}
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
               Cancel
             </button>
             <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
@@ -507,14 +507,14 @@ function EditSavingModal({ saving, onClose, onSuccess }: { saving: Saving; onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Update {saving.name}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Update {saving.name}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl">✕</button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Current Value (₹)</label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Current Value (₹)</label>
             <input
               type="number"
               min="0"
@@ -522,22 +522,22 @@ function EditSavingModal({ saving, onClose, onSuccess }: { saving: Saving; onClo
               value={currentValue}
               onChange={e => setCurrentValue(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Note <span className="text-gray-300">(optional)</span></label>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Note <span className="text-gray-300">(optional)</span></label>
             <input
               type="text"
               value={note}
               onChange={e => setNote(e.target.value)}
               maxLength={300}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
+              className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-violet-400"
             />
           </div>
           {error && <p className="text-xs text-rose-500">{error}</p>}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
               Cancel
             </button>
             <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
@@ -644,7 +644,7 @@ export default function SavingsManager() {
         {/* ── Portfolio Summary ─────────────────────────────────────────── */}
         {summaryLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
+            {[1,2,3,4].map(i => <div key={i} className="h-24 bg-gray-100 dark:bg-gray-700 rounded-2xl animate-pulse" />)}
           </div>
         ) : summary && summary.count > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -676,7 +676,7 @@ export default function SavingsManager() {
         {/* ── Platforms ─────────────────────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Investment Platforms</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Investment Platforms</h2>
             <button
               onClick={() => setShowAddPlatform(true)}
               className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 shadow-sm"
@@ -686,22 +686,22 @@ export default function SavingsManager() {
           </div>
 
           {platforms.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-sm text-gray-400">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center text-sm text-gray-400 dark:text-gray-500">
               No platforms yet. Add one to start tracking your in-app wallet balance.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {platforms.map(p => (
-                <div key={p.id} className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3 group">
+                <div key={p.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 space-y-3 group">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900">{p.name}</p>
-                      {p.note && <p className="text-xs text-gray-400 mt-0.5">{p.note}</p>}
+                      <p className="font-semibold text-gray-900 dark:text-white">{p.name}</p>
+                      {p.note && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{p.note}</p>}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => setTopUpPlatform(p)}
-                        className="text-xs text-violet-500 hover:text-violet-700 px-2 py-1 rounded-lg hover:bg-violet-50"
+                        className="text-xs text-violet-500 hover:text-violet-700 px-2 py-1 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/30"
                         title="Add more funds"
                       >
                         + Top Up
@@ -709,7 +709,7 @@ export default function SavingsManager() {
                       <button
                         onClick={() => deletePlatform(p.id, p.name)}
                         disabled={deletingPlatformId === p.id}
-                        className="text-gray-300 hover:text-rose-400 px-2 py-1 text-lg"
+                        className="text-gray-300 dark:text-gray-600 hover:text-rose-400 px-2 py-1 text-lg"
                         title="Delete platform"
                       >
                         {deletingPlatformId === p.id ? '…' : '🗑️'}
@@ -717,15 +717,15 @@ export default function SavingsManager() {
                     </div>
                   </div>
                   <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between text-gray-500">
+                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
                       <span>Total transferred</span>
-                      <span className="font-medium text-gray-900">{formatINR(p.totalAdded)}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{formatINR(p.totalAdded)}</span>
                     </div>
-                    <div className="flex justify-between text-gray-500">
+                    <div className="flex justify-between text-gray-500 dark:text-gray-400">
                       <span>Invested</span>
-                      <span className="font-medium text-gray-900">{formatINR(p.totalInvested)}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{formatINR(p.totalInvested)}</span>
                     </div>
-                    <div className="flex justify-between text-gray-700 border-t border-gray-100 pt-1.5">
+                    <div className="flex justify-between text-gray-700 dark:text-gray-300 border-t border-gray-100 dark:border-gray-700 pt-1.5">
                       <span className="font-medium">Available balance</span>
                       <span className={`font-bold ${p.balance < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                         {formatINR(p.balance)}
@@ -741,7 +741,7 @@ export default function SavingsManager() {
         {/* ── Individual Savings ────────────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Investments</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Investments</h2>
             <button
               onClick={() => setShowAddSaving(true)}
               className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 shadow-sm"
@@ -752,20 +752,20 @@ export default function SavingsManager() {
 
           {savingsLoading ? (
             <div className="space-y-3">
-              {[1,2,3].map(i => <div key={i} className="h-20 bg-gray-100 rounded-2xl animate-pulse" />)}
+              {[1,2,3].map(i => <div key={i} className="h-20 bg-gray-100 dark:bg-gray-700 rounded-2xl animate-pulse" />)}
             </div>
           ) : savings.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-sm text-gray-400">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center text-sm text-gray-400 dark:text-gray-500">
               No investments yet. Click "+ Add Investment" to start tracking.
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="divide-y divide-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {savings.map(s => {
                   const t = typeLabel(s.type);
                   const gain = s.gainLoss >= 0;
                   return (
-                    <div key={s.id} className="flex items-center px-5 py-4 hover:bg-gray-50 transition-colors group">
+                    <div key={s.id} className="flex items-center px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
                       {/* Type icon */}
                       <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-lg flex-shrink-0">
                         {t.icon}
@@ -774,17 +774,17 @@ export default function SavingsManager() {
                       {/* Name + meta */}
                       <div className="flex-1 min-w-0 mx-4">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900 truncate">{s.name}</p>
-                          <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 flex-shrink-0">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">{s.name}</p>
+                          <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-full px-2 py-0.5 flex-shrink-0">
                             {t.label}
                           </span>
                           {s.platform && (
-                            <span className="text-xs bg-violet-50 text-violet-500 border border-violet-100 rounded-full px-2 py-0.5 flex-shrink-0">
+                            <span className="text-xs bg-violet-50 dark:bg-violet-900/40 text-violet-500 dark:text-violet-400 border border-violet-100 dark:border-violet-800 rounded-full px-2 py-0.5 flex-shrink-0">
                               {s.platform.name}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                           Invested {formatINR(s.investedAmount)}
                           {s.charges > 0 && ` + ${formatINR(s.charges)} charges`}
                           {' · '}Started {formatDate(s.startDate)}
@@ -794,7 +794,7 @@ export default function SavingsManager() {
 
                       {/* Values */}
                       <div className="text-right flex-shrink-0 mr-4">
-                        <p className="font-semibold text-gray-900">{formatINR(s.currentValue)}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatINR(s.currentValue)}</p>
                         <p className={`text-xs font-medium ${gain ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {gain ? '+' : ''}{formatINR(s.gainLoss)} ({s.gainPercent >= 0 ? '+' : ''}{s.gainPercent.toFixed(1)}%)
                         </p>
@@ -804,7 +804,7 @@ export default function SavingsManager() {
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setEditSaving(s)}
-                          className="text-xs text-violet-500 hover:text-violet-700 px-2 py-1 rounded-lg hover:bg-violet-50"
+                          className="text-xs text-violet-500 hover:text-violet-700 px-2 py-1 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/30"
                           title="Update value"
                         >
                           Edit
@@ -812,7 +812,7 @@ export default function SavingsManager() {
                         <button
                           onClick={() => deleteSaving(s.id)}
                           disabled={deletingId === s.id}
-                          className="text-gray-300 hover:text-rose-400 text-lg px-1"
+                          className="text-gray-300 dark:text-gray-600 hover:text-rose-400 text-lg px-1"
                           title="Delete"
                         >
                           {deletingId === s.id ? '…' : '🗑️'}
