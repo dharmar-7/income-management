@@ -1,28 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <defs>
-    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#7c3aed"/>
-      <stop offset="55%" stop-color="#6366f1"/>
-      <stop offset="100%" stop-color="#4f46e5"/>
-    </linearGradient>
-    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#818cf8" stop-opacity="0.05"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Prism body — right-pointing triangle -->
-  <polygon points="3,3 3,29 24,16" fill="url(#body)"/>
-  <!-- Top-face highlight for 3-D depth -->
-  <polygon points="3,3 3,16 24,16" fill="url(#face)"/>
-  <!-- Edge outline -->
-  <polyline points="3,3 3,29 24,16 3,3" stroke="#c4b5fd" stroke-width="0.6" stroke-linejoin="round" fill="none" opacity="0.7"/>
-
-  <!-- Spectrum rays fanning from apex -->
-  <line x1="24" y1="16" x2="31" y2="7"  stroke="#8b5cf6" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="24" y1="16" x2="31" y2="11" stroke="#6366f1" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="24" y1="16" x2="31" y2="15" stroke="#06b6d4" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="24" y1="16" x2="31" y2="19" stroke="#22c55e" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="24" y1="16" x2="31" y2="23" stroke="#f97316" stroke-width="1.6" stroke-linecap="round"/>
-  <line x1="24" y1="16" x2="31" y2="27" stroke="#f43f5e" stroke-width="1.6" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <style>
+    .a1 { stroke: #e11d48; }
+    .a2 { stroke: #4f46e5; }
+    .a3 { stroke: #15803d; }
+    @media (prefers-color-scheme: dark) {
+      .a1 { stroke: #ff2d55; }
+      .a2 { stroke: #5e5ce6; }
+      .a3 { stroke: #32d74b; }
+    }
+  </style>
+  <path class="a1" d="M 18,36 L 24,28 L 30,36" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="a2" d="M 10,40 L 24,18 L 38,40" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="a3" d="M 3,43 L 24,10 L 45,43"  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
