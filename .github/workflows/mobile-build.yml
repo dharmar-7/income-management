@@ -1,6 +1,7 @@
 name: Mobile Build (Android APK)
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -35,7 +36,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          BUILD_URL=$(npx eas-cli build --platform android --profile preview --non-interactive --json | jq -r '.[0].artifacts.buildUrl // empty')
+          BUILD_URL=$(npx eas-cli build --platform android --profile preview --non-interactive --wait --json 2>/dev/null | jq -r '.[0].artifacts.buildUrl // empty')
           echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
 
       - name: Download APK

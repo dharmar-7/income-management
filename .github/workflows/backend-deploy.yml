@@ -1,6 +1,7 @@
 name: Backend Deploy (Render)
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
