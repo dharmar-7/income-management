@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build Android APK
+    name: Build & Release Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,35 @@ jobs:
         run: npm install
 
       - name: Build APK via EAS
+        id: build
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas-cli build --platform android --profile preview --non-interactive
+        run: |
+          BUILD_URL=$(npx eas-cli build --platform android --profile preview --non-interactive --json | jq -r '.[0].artifacts.buildUrl // empty')
+          echo "build_url=$BUILD_URL" >> $GITHUB_OUTPUT
+
+      - name: Download APK
+        if: steps.build.outputs.build_url != ''
+        run: |
+          curl -L "${{ steps.build.outputs.build_url }}" -o velora.apk
+
+      - name: Create GitHub Release
+        if: steps.build.outputs.build_url != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mobile-${{ github.run_number }}
+          name: "Velora Android v${{ github.run_number }}"
+          body: |
+            ## Velora for Android
+
+            **Install instructions:**
+            1. Download `velora.apk` below
+            2. On your Android phone: Settings → Apps → Special app access → Install unknown apps → allow your browser
+            3. Open the downloaded file and tap Install
+
+            > Built automatically from commit ${{ github.sha }}
+          files: velora.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
