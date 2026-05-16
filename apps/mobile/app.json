@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.yourname.velorafinance",
-      "permissions": []
+      "permissions": ["android.permission.READ_SMS", "android.permission.RECEIVE_SMS"]
     },
     "web": {
       "bundler": "metro",

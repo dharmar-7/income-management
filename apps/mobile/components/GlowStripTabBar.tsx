@@ -21,7 +21,7 @@ const MORE_ITEMS = [
   { label: 'Notes',    icon: '📝', route: 'notes'    },
   { label: 'Reports',  icon: '📊', route: 'reports'  },
   { label: 'Settings', icon: '⚙️', route: 'settings' },
-  { label: 'Import',   icon: '📥', route: null        },
+  { label: 'Import',   icon: '📥', route: 'settings'  },
 ];
 
 export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps) {
