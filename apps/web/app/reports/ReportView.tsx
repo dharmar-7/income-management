@@ -119,7 +119,7 @@ export default function ReportView() {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-wrap gap-3 items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 flex flex-wrap gap-3 items-center">
         <CustomSelect
           value={String(month)}
           onChange={v => setMonth(Number(v))}
@@ -136,8 +136,9 @@ export default function ReportView() {
 
         <button
           onClick={handleExport}
-          disabled={downloading}
-          className="ml-auto rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50 flex items-center gap-2 shadow-md shadow-indigo-200"
+          disabled={downloading || !r || r.summary.transactionCount === 0}
+          title={r && r.summary.transactionCount === 0 ? 'No transactions this month' : undefined}
+          className="ml-auto rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2 text-sm text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md shadow-indigo-200"
         >
           {downloading ? 'Exporting...' : '↓ Export CSV'}
         </button>
@@ -147,9 +148,9 @@ export default function ReportView() {
       {monthlyQuery.isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5 animate-pulse">
-              <div className="h-3 bg-gray-100 rounded w-20 mb-3" />
-              <div className="h-6 bg-gray-100 rounded w-28" />
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 animate-pulse">
+              <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-20 mb-3" />
+              <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded w-28" />
             </div>
           ))}
         </div>
@@ -171,22 +172,22 @@ export default function ReportView() {
       {r && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Top categories — horizontal bar chart */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Top Categories</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Top Categories</h3>
             {r.topCategories.length === 0 ? (
-              <p className="text-sm text-gray-400">No expense data for this month.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">No expense data for this month.</p>
             ) : (
               <div className="space-y-4">
                 {r.topCategories.map((item, i) => (
                   <div key={i}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-700">
+                      <span className="text-gray-700 dark:text-gray-200">
                         {item.category.icon} {item.category.name}
-                        <span className="text-gray-400 ml-1 text-xs">({item.count}×)</span>
+                        <span className="text-gray-400 dark:text-gray-500 ml-1 text-xs">({item.count}×)</span>
                       </span>
-                      <span className="font-medium text-gray-900">{formatINR(item.total)}</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{formatINR(item.total)}</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full"
                         style={{ width: `${(item.total / maxCategoryTotal) * 100}%`, backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }}
@@ -199,24 +200,24 @@ export default function ReportView() {
           </div>
 
           {/* Top merchants */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Top Merchants</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">Top Merchants</h3>
             {r.topMerchants.length === 0 ? (
-              <p className="text-sm text-gray-400">No expense data for this month.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">No expense data for this month.</p>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {r.topMerchants.map((item, i) => (
                   <div key={i} className="flex items-center justify-between py-2.5">
                     <div className="flex items-center gap-3">
-                      <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
+                      <span className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400">
                         {i + 1}
                       </span>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{item.merchant}</p>
-                        <p className="text-xs text-gray-400">{item.count} transactions</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{item.merchant}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{item.count} transactions</p>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">{formatINR(item.total)}</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatINR(item.total)}</span>
                   </div>
                 ))}
               </div>
@@ -226,11 +227,11 @@ export default function ReportView() {
       )}
 
       {/* Annual overview table */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">{year} Annual Overview</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-4">{year} Annual Overview</h3>
 
         {annualQuery.isLoading ? (
-          <div className="h-32 bg-gray-100 animate-pulse rounded-xl" />
+          <div className="h-32 bg-gray-100 dark:bg-gray-700 animate-pulse rounded-xl" />
         ) : a ? (
           <>
             {/* Mini bar chart — income + expenses side-by-side per month */}
@@ -257,7 +258,7 @@ export default function ReportView() {
               {a.months.map(m => (
                 <div
                   key={m.month}
-                  className={`flex-1 text-center text-xs ${m.month === month ? 'font-bold text-gray-900' : 'text-gray-400'}`}
+                  className={`flex-1 text-center text-xs ${m.month === month ? 'font-bold text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}
                 >
                   {MONTH_NAMES[m.month]}
                 </div>
@@ -265,23 +266,23 @@ export default function ReportView() {
             </div>
 
             {/* Legend */}
-            <div className="flex gap-4 text-xs text-gray-500 mb-4">
+            <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400 mb-4">
               <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Income</span>
               <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" /> Expenses</span>
             </div>
 
             {/* Year totals */}
-            <div className="grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+            <div className="grid grid-cols-3 gap-4 border-t border-gray-100 dark:border-gray-700 pt-4">
               <div>
-                <p className="text-xs text-gray-400">Total Income</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Total Income</p>
                 <p className="font-semibold text-emerald-600">{formatINR(a.totals.income)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Total Expenses</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Total Expenses</p>
                 <p className="font-semibold text-rose-600">{formatINR(a.totals.expenses)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400">Net Savings</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Net Savings</p>
                 <p className={`font-semibold ${a.totals.savings >= 0 ? 'text-indigo-600' : 'text-orange-600'}`}>
                   {formatINR(a.totals.savings)}
                 </p>
