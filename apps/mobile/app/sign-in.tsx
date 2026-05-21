@@ -1,6 +1,6 @@
 import { useSSO, useSignIn } from '@clerk/clerk-expo';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import {
   View,
   Text,
@@ -37,9 +37,10 @@ export default function SignInScreen() {
         });
       } else {
         // scheme updated from 'income' to 'prism' to match app.json
+        const redirectUrl = AuthSession.makeRedirectUri({ scheme: 'velora', path: 'sso-callback' });
         const { createdSessionId, setActive } = await startSSOFlow({
           strategy: 'oauth_google',
-          redirectUrl: Linking.createURL('/sso-callback'),
+          redirectUrl,
         });
         if (createdSessionId && setActive) {
           await setActive({ session: createdSessionId });
