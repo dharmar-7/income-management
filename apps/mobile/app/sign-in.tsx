@@ -36,7 +36,7 @@ export default function SignInScreen() {
         // scheme updated from 'income' to 'prism' to match app.json
         const { createdSessionId, setActive } = await startSSOFlow({
           strategy: 'oauth_google',
-          redirectUrl: Linking.createURL('/(tabs)', { scheme: 'prism' }),
+          redirectUrl: Linking.createURL('/(tabs)', { scheme: 'velora' }),
         });
         if (createdSessionId && setActive) {
           await setActive({ session: createdSessionId });
