@@ -1,5 +1,6 @@
 import { useSSO, useSignIn } from '@clerk/clerk-expo';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import {
   View,
   Text,
@@ -10,6 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import PrismLogoMobile from '@/components/PrismLogoMobile';
+
+WebBrowser.maybeCompleteAuthSession();
 
 // On native: useOAuth opens a browser for Google OAuth and deep-links back.
 // On web:    useOAuth uses expo-web-browser which doesn't exist in a browser,
@@ -36,7 +39,7 @@ export default function SignInScreen() {
         // scheme updated from 'income' to 'prism' to match app.json
         const { createdSessionId, setActive } = await startSSOFlow({
           strategy: 'oauth_google',
-          redirectUrl: Linking.createURL('/(tabs)', { scheme: 'velora' }),
+          redirectUrl: Linking.createURL('/sso-callback'),
         });
         if (createdSessionId && setActive) {
           await setActive({ session: createdSessionId });
