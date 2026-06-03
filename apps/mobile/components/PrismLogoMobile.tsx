@@ -28,7 +28,6 @@ export default function PrismLogoMobile({ size = 'md', name = 'Velora' }: Props)
           height: gem,
           transform: [{ rotate: '45deg' }],
           borderRadius: Math.round(gem * 0.14),
-          overflow: 'hidden',
         }}>
           {/* Top row: pink | orange */}
           <View style={{ flex: 1, flexDirection: 'row' }}>
