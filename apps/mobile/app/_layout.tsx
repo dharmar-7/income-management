@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 60_000 } },
+  defaultOptions: { queries: { staleTime: 5 * 60_000, gcTime: 10 * 60_000 } },
 });
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;

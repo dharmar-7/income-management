@@ -899,7 +899,7 @@ const styles = StyleSheet.create({
   emptyHint: { fontSize: 13, color: '#9ca3af', marginTop: 6 },
 
   fab: {
-    position: 'absolute', bottom: 24, right: 20,
+    position: 'absolute', bottom: 104, right: 20,
     width: 52, height: 52, borderRadius: 26,
     backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center',
     shadowColor: '#6366f1', shadowOffset: { width: 0, height: 4 },

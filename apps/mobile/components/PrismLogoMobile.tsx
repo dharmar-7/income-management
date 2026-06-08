@@ -22,31 +22,34 @@ export default function PrismLogoMobile({ size = 'md', name = 'Velora' }: Props)
     <View style={{ flexDirection: 'row', alignItems: 'center', gap }}>
 
       {/* ── Crystal icon: rotated square with 4 spectrum quadrants ── */}
+      {/* NOTE: Android crashes when overflow:hidden and transform are on the same View.
+          Fix: outer View handles the rotation; inner View handles the clip. */}
       <View style={{ width: s, height: s, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{
-          width: gem,
-          height: gem,
-          transform: [{ rotate: '45deg' }],
-          borderRadius: Math.round(gem * 0.14),
-        }}>
-          {/* Top row: pink | orange */}
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={{ flex: 1, backgroundColor: '#f72585' }} />
-            <View style={{ flex: 1, backgroundColor: '#ff9100' }} />
-          </View>
-          {/* Bottom row: violet | green */}
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={{ flex: 1, backgroundColor: '#bf5af2' }} />
-            <View style={{ flex: 1, backgroundColor: '#32d74b' }} />
-          </View>
-          {/* Specular highlight — top-left corner */}
+        <View style={{ width: gem, height: gem, transform: [{ rotate: '45deg' }] }}>
           <View style={{
-            position: 'absolute',
-            top: '4%', left: '4%',
-            width: '38%', height: '38%',
-            backgroundColor: 'rgba(255,255,255,0.28)',
-            borderRadius: Math.round(gem * 0.1),
-          }} />
+            width: '100%', height: '100%',
+            borderRadius: Math.round(gem * 0.14),
+            overflow: 'hidden',
+          }}>
+            {/* Top row: pink | orange */}
+            <View style={{ flex: 1, flexDirection: 'row' }}>
+              <View style={{ flex: 1, backgroundColor: '#f72585' }} />
+              <View style={{ flex: 1, backgroundColor: '#ff9100' }} />
+            </View>
+            {/* Bottom row: violet | green */}
+            <View style={{ flex: 1, flexDirection: 'row' }}>
+              <View style={{ flex: 1, backgroundColor: '#bf5af2' }} />
+              <View style={{ flex: 1, backgroundColor: '#32d74b' }} />
+            </View>
+            {/* Specular highlight */}
+            <View style={{
+              position: 'absolute',
+              top: '4%', left: '4%',
+              width: '38%', height: '38%',
+              backgroundColor: 'rgba(255,255,255,0.28)',
+              borderRadius: Math.round(gem * 0.1),
+            }} />
+          </View>
         </View>
       </View>
 

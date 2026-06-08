@@ -16,8 +16,7 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: bg },
         headerShadowVisible: false,
         headerTitle: () => <PrismLogoMobile size="md" />,
-        // bottom padding so content clears the floating strip
-        contentStyle: { paddingBottom: 88 },
+        sceneStyle: { paddingBottom: 110 },
       }}
     >
       <Tabs.Screen name="index"        options={{ title: 'Dashboard'    }} />
@@ -27,6 +26,7 @@ export default function TabLayout() {
       <Tabs.Screen name="notes"        options={{ title: 'Notes'         }} />
       <Tabs.Screen name="reports"      options={{ title: 'Reports'       }} />
       <Tabs.Screen name="settings"     options={{ title: 'Settings'      }} />
+      <Tabs.Screen name="import"       options={{ title: 'Import'        }} />
     </Tabs>
   );
 }

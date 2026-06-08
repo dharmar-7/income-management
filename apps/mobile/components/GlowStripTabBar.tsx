@@ -17,11 +17,18 @@ const ICONS: Record<MainRoute, string> = {
   savings: '💰',
 };
 
+const LABELS: Record<MainRoute, string> = {
+  index: 'Home',
+  transactions: 'Txns',
+  budgets: 'Budgets',
+  savings: 'Savings',
+};
+
 const MORE_ITEMS = [
   { label: 'Notes',    icon: '📝', route: 'notes'    },
   { label: 'Reports',  icon: '📊', route: 'reports'  },
+  { label: 'Import',   icon: '📥', route: 'import'   },
   { label: 'Settings', icon: '⚙️', route: 'settings' },
-  { label: 'Import',   icon: '📥', route: 'settings'  },
 ];
 
 export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps) {
@@ -48,7 +55,7 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
       {/* ── more popup ── */}
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={s.overlay} onPress={() => setOpen(false)}>
-          <View style={[s.popup, { bottom: bottom + 72 }, dark ? s.popupDark : s.popupLight]}>
+          <View style={[s.popup, { bottom: bottom + 80 }, dark ? s.popupDark : s.popupLight]}>
             <View style={s.pgrid}>
               {MORE_ITEMS.map(item => (
                 <TouchableOpacity
@@ -77,23 +84,22 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
           tint={dark ? 'dark' : 'light'}
           style={[s.strip, { borderColor: dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)' }]}
         >
-          {/* Dashboard */}
-          <TabItem icon={ICONS.index}        active={active === 'index'}        dark={dark} onPress={() => jumpTo('index')} />
-          {/* Transactions */}
-          <TabItem icon={ICONS.transactions} active={active === 'transactions'} dark={dark} onPress={() => jumpTo('transactions')} />
+          <TabItem icon={ICONS.index}        label={LABELS.index}        active={active === 'index'}        dark={dark} onPress={() => jumpTo('index')} />
+          <TabItem icon={ICONS.transactions} label={LABELS.transactions} active={active === 'transactions'} dark={dark} onPress={() => jumpTo('transactions')} />
 
-          {/* Crystal gem — centre tab (glow strip style, no raised button) */}
+          {/* Crystal gem — centre tab */}
           <TouchableOpacity style={s.ti} onPress={() => setOpen(o => !o)} activeOpacity={0.7}>
             <View style={[s.ic, gemActive && (dark ? s.icActiveDark : s.icActiveLight), open && s.icOpen]}>
               <GemIcon />
             </View>
             <View style={[s.dot, (gemActive || open) && s.dotActive]} />
+            <Text style={[s.tabLabel, { color: (gemActive || open) ? '#6366f1' : dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }]}>
+              More
+            </Text>
           </TouchableOpacity>
 
-          {/* Budgets */}
-          <TabItem icon={ICONS.budgets}  active={active === 'budgets'}  dark={dark} onPress={() => jumpTo('budgets')} />
-          {/* Savings */}
-          <TabItem icon={ICONS.savings}  active={active === 'savings'}  dark={dark} onPress={() => jumpTo('savings')} />
+          <TabItem icon={ICONS.budgets}  label={LABELS.budgets}  active={active === 'budgets'}  dark={dark} onPress={() => jumpTo('budgets')} />
+          <TabItem icon={ICONS.savings}  label={LABELS.savings}  active={active === 'savings'}  dark={dark} onPress={() => jumpTo('savings')} />
         </BlurView>
       </View>
     </>
@@ -101,43 +107,44 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
 }
 
 function TabItem({
-  icon, active, dark, onPress,
-}: { icon: string; active: boolean; dark: boolean; onPress: () => void }) {
+  icon, label, active, dark, onPress,
+}: { icon: string; label: string; active: boolean; dark: boolean; onPress: () => void }) {
   return (
     <TouchableOpacity style={s.ti} onPress={onPress} activeOpacity={0.7}>
       <View style={[s.ic, active && (dark ? s.icActiveDark : s.icActiveLight)]}>
         <Text style={s.emoji}>{icon}</Text>
       </View>
       <View style={[s.dot, active && s.dotActive]} />
+      <Text style={[s.tabLabel, { color: active ? '#6366f1' : dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }]}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 function GemIcon() {
-  const size = 18;
+  const size = 20;
   const r    = Math.round(size * 0.14);
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <View style={{
-        width: size, height: size,
-        transform: [{ rotate: '45deg' }],
-        borderRadius: r,
-        overflow: 'hidden',
-      }}>
-        <View style={{ flex: 1, flexDirection: 'row' }}>
-          <View style={{ flex: 1, backgroundColor: '#f72585' }} />
-          <View style={{ flex: 1, backgroundColor: '#ff9100' }} />
+      {/* Outer rotates; inner clips — avoids Android overflow+transform bug */}
+      <View style={{ width: size, height: size, transform: [{ rotate: '45deg' }] }}>
+        <View style={{ width: '100%', height: '100%', borderRadius: r, overflow: 'hidden' }}>
+          <View style={{ flex: 1, flexDirection: 'row' }}>
+            <View style={{ flex: 1, backgroundColor: '#f72585' }} />
+            <View style={{ flex: 1, backgroundColor: '#ff9100' }} />
+          </View>
+          <View style={{ flex: 1, flexDirection: 'row' }}>
+            <View style={{ flex: 1, backgroundColor: '#bf5af2' }} />
+            <View style={{ flex: 1, backgroundColor: '#32d74b' }} />
+          </View>
+          <View style={{
+            position: 'absolute', top: '8%', left: '8%',
+            width: '36%', height: '36%',
+            backgroundColor: 'rgba(255,255,255,0.3)',
+            borderRadius: 2,
+          }} />
         </View>
-        <View style={{ flex: 1, flexDirection: 'row' }}>
-          <View style={{ flex: 1, backgroundColor: '#bf5af2' }} />
-          <View style={{ flex: 1, backgroundColor: '#32d74b' }} />
-        </View>
-        <View style={{
-          position: 'absolute', top: '8%', left: '8%',
-          width: '36%', height: '36%',
-          backgroundColor: 'rgba(255,255,255,0.3)',
-          borderRadius: 2,
-        }} />
       </View>
     </View>
   );
@@ -150,7 +157,7 @@ const INDIGO_OPEN = 'rgba(99,102,241,0.25)';
 const s = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    left: 20, right: 20,
+    left: 16, right: 16,
   },
   strip: {
     flexDirection: 'row',
@@ -158,8 +165,8 @@ const s = StyleSheet.create({
     justifyContent: 'space-around',
     borderRadius: 50,
     borderWidth: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -169,18 +176,19 @@ const s = StyleSheet.create({
   },
   ti: {
     alignItems: 'center',
-    gap: 5,
+    gap: 3,
+    minWidth: 54,
   },
   ic: {
-    width: 32, height: 32,
-    borderRadius: 16,
+    width: 38, height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
   icActiveDark:  { backgroundColor: INDIGO_BG_D },
   icActiveLight: { backgroundColor: INDIGO_BG_L },
   icOpen:        { backgroundColor: INDIGO_OPEN  },
-  emoji: { fontSize: 16 },
+  emoji: { fontSize: 18 },
   dot: {
     width: 4, height: 4,
     borderRadius: 2,
@@ -194,16 +202,21 @@ const s = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
+  tabLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
 
   /* popup */
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   popup: {
     position: 'absolute',
-    left: 20, right: 20,
+    left: 16, right: 16,
     borderRadius: 18,
     padding: 10,
     borderWidth: 1,
@@ -235,12 +248,12 @@ const s = StyleSheet.create({
     width: '47%',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 9,
+    paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
   },
   pitemDark:  { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.07)' },
   pitemLight: { backgroundColor: 'rgba(99,102,241,0.06)',  borderColor: 'rgba(99,102,241,0.12)'  },
-  picon:  { fontSize: 19 },
-  plabel: { fontSize: 8.5, fontWeight: '700' },
+  picon:  { fontSize: 22 },
+  plabel: { fontSize: 11, fontWeight: '700' },
 });
