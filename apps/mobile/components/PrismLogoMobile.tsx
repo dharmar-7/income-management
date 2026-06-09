@@ -1,8 +1,5 @@
 import { View, Text, useColorScheme } from 'react-native';
 
-// Primary: Faceted Crystal (Full Spectrum Rainbow) — 4-quadrant rotated diamond
-// Wordmark: "Velora" in violet (gradient text needs expo-linear-gradient; solid for now)
-
 interface Props {
   size?: 'sm' | 'md' | 'lg';
   name?: string;
@@ -13,47 +10,39 @@ export default function PrismLogoMobile({ size = 'md', name = 'Velora' }: Props)
   const isDark = colorScheme === 'dark';
 
   const scale = size === 'sm' ? 0.75 : size === 'lg' ? 1.35 : 1;
-  const s     = Math.round(28 * scale);   // icon bounding box
-  const gem   = Math.round(s * 0.82);     // inner rotated square size
+  const s     = Math.round(28 * scale);
+  const gem   = Math.round(s * 0.86);
   const gap   = Math.round(8 * scale);
   const fontSize = Math.round(17 * scale);
 
+  // NOTE: On Android, overflow:hidden + borderRadius ONLY clips reliably when there is
+  // NO transform on this View or any ancestor. A rotated diamond looks great but the
+  // Android header renderer breaks it every time. Circle with 4 quadrants is equivalent
+  // visually and is guaranteed to clip correctly everywhere.
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap }}>
-
-      {/* ── Crystal icon: rotated square with 4 spectrum quadrants ── */}
-      {/* NOTE: Android crashes when overflow:hidden and transform are on the same View.
-          Fix: outer View handles the rotation; inner View handles the clip. */}
-      <View style={{ width: s, height: s, alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ width: gem, height: gem, transform: [{ rotate: '45deg' }] }}>
-          <View style={{
-            width: '100%', height: '100%',
-            borderRadius: Math.round(gem * 0.14),
-            overflow: 'hidden',
-          }}>
-            {/* Top row: pink | orange */}
-            <View style={{ flex: 1, flexDirection: 'row' }}>
-              <View style={{ flex: 1, backgroundColor: '#f72585' }} />
-              <View style={{ flex: 1, backgroundColor: '#ff9100' }} />
-            </View>
-            {/* Bottom row: violet | green */}
-            <View style={{ flex: 1, flexDirection: 'row' }}>
-              <View style={{ flex: 1, backgroundColor: '#bf5af2' }} />
-              <View style={{ flex: 1, backgroundColor: '#32d74b' }} />
-            </View>
-            {/* Specular highlight */}
-            <View style={{
-              position: 'absolute',
-              top: '4%', left: '4%',
-              width: '38%', height: '38%',
-              backgroundColor: 'rgba(255,255,255,0.28)',
-              borderRadius: Math.round(gem * 0.1),
-            }} />
-          </View>
+      <View style={{
+        width: gem, height: gem,
+        borderRadius: gem / 2,
+        overflow: 'hidden',
+      }}>
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          <View style={{ flex: 1, backgroundColor: '#f72585' }} />
+          <View style={{ flex: 1, backgroundColor: '#ff9100' }} />
         </View>
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          <View style={{ flex: 1, backgroundColor: '#bf5af2' }} />
+          <View style={{ flex: 1, backgroundColor: '#32d74b' }} />
+        </View>
+        <View style={{
+          position: 'absolute',
+          top: '8%', left: '8%',
+          width: '34%', height: '34%',
+          backgroundColor: 'rgba(255,255,255,0.42)',
+          borderRadius: 99,
+        }} />
       </View>
 
-      {/* ── Wordmark ── */}
       <Text style={{
         fontSize,
         fontWeight: '700',
@@ -62,7 +51,6 @@ export default function PrismLogoMobile({ size = 'md', name = 'Velora' }: Props)
       }}>
         {name}
       </Text>
-
     </View>
   );
 }

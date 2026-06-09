@@ -67,7 +67,7 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
                   }}
                 >
                   <Text style={s.picon}>{item.icon}</Text>
-                  <Text style={[s.plabel, { color: dark ? 'rgba(255,255,255,0.6)' : '#4b5563' }]}>
+                  <Text style={[s.plabel, { color: dark ? 'rgba(255,255,255,0.85)' : '#374151' }]}>
                     {item.label}
                   </Text>
                 </TouchableOpacity>
@@ -80,9 +80,9 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
       {/* ── floating strip ── */}
       <View style={[s.wrap, { bottom }]} pointerEvents="box-none">
         <BlurView
-          intensity={dark ? 60 : 50}
+          intensity={dark ? 85 : 90}
           tint={dark ? 'dark' : 'light'}
-          style={[s.strip, { borderColor: dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)' }]}
+          style={[s.strip, { borderColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.14)' }]}
         >
           <TabItem icon={ICONS.index}        label={LABELS.index}        active={active === 'index'}        dark={dark} onPress={() => jumpTo('index')} />
           <TabItem icon={ICONS.transactions} label={LABELS.transactions} active={active === 'transactions'} dark={dark} onPress={() => jumpTo('transactions')} />
@@ -93,7 +93,7 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
               <GemIcon />
             </View>
             <View style={[s.dot, (gemActive || open) && s.dotActive]} />
-            <Text style={[s.tabLabel, { color: (gemActive || open) ? '#6366f1' : dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }]}>
+            <Text style={[s.tabLabel, { color: (gemActive || open) ? '#6366f1' : dark ? 'rgba(255,255,255,0.75)' : '#52525b' }]}>
               More
             </Text>
           </TouchableOpacity>
@@ -115,7 +115,7 @@ function TabItem({
         <Text style={s.emoji}>{icon}</Text>
       </View>
       <View style={[s.dot, active && s.dotActive]} />
-      <Text style={[s.tabLabel, { color: active ? '#6366f1' : dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }]}>
+      <Text style={[s.tabLabel, { color: active ? '#6366f1' : dark ? 'rgba(255,255,255,0.75)' : '#52525b' }]}>
         {label}
       </Text>
     </TouchableOpacity>

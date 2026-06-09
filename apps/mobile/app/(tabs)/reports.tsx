@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
+  View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Share,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
@@ -63,6 +63,28 @@ export default function ReportsScreen() {
     else setMonth(m => m + 1);
   }
 
+  function handleShare() {
+    if (!r) return;
+    const lines = [
+      `📊 Report — ${FULL_MONTHS[month - 1]} ${year}`,
+      '',
+      `💰 Income:      ${formatINR(r.summary.totalIncome)}`,
+      `💸 Expenses:    ${formatINR(r.summary.totalExpenses)}`,
+      `📈 Net Savings: ${formatINR(r.summary.netSavings)}`,
+      `🔢 Transactions: ${r.summary.transactionCount}`,
+      '',
+      'Top Categories:',
+      ...r.topCategories.map(c => `  ${c.category.icon} ${c.category.name}: ${formatINR(c.total)} (${c.count}×)`),
+      '',
+      'Top Merchants:',
+      ...r.topMerchants.map((m, i) => `  ${i + 1}. ${m.merchant}: ${formatINR(m.total)}`),
+    ];
+    Share.share({
+      message: lines.join('\n'),
+      title: `Velora Report — ${FULL_MONTHS[month - 1]} ${year}`,
+    });
+  }
+
   const { data: r, isLoading } = useQuery({
     queryKey: ['report-monthly', month, year],
     queryFn: async () => {
@@ -106,6 +128,23 @@ export default function ReportsScreen() {
           }}>›</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Download / share */}
+      <TouchableOpacity
+        onPress={handleShare}
+        disabled={!r}
+        style={{
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+          backgroundColor: r ? '#6366f1' : '#f3f4f6',
+          borderRadius: 14, paddingVertical: 13, marginBottom: 16,
+          opacity: r ? 1 : 0.55,
+        }}
+      >
+        <Text style={{ fontSize: 16 }}>↗</Text>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: r ? '#fff' : '#9ca3af' }}>
+          {r ? 'Share Report' : 'No data to share'}
+        </Text>
+      </TouchableOpacity>
 
       {isLoading ? (
         <ActivityIndicator color="#6366f1" size="large" style={{ marginTop: 48 }} />
