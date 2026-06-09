@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert, Platform, PermissionsAndroid,
 } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import * as DocumentPicker from 'expo-document-picker';
-import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,7 +12,6 @@ const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 type ImportStatus = 'idle' | 'uploading' | 'success' | 'error';
-type SyncStatus = 'idle' | 'syncing' | 'done' | 'error';
 type SmsSyncStatus = 'idle' | 'requesting' | 'reading' | 'syncing' | 'done' | 'error';
 
 interface ImportResult {
@@ -39,12 +37,6 @@ interface SmsSyncResult {
 export default function ImportScreen() {
   const { getToken } = useAuth();
 
-  // ── Gmail state ──────────────────────────────────────────────────────────
-  const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [disconnecting, setDisconnecting] = useState(false);
-
   // ── Import state ─────────────────────────────────────────────────────────
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -54,76 +46,6 @@ export default function ImportScreen() {
   const [smsStatus, setSmsStatus] = useState<SmsSyncStatus>('idle');
   const [smsResult, setSmsResult] = useState<SmsSyncResult | null>(null);
   const [smsError, setSmsError] = useState<string | null>(null);
-
-  useEffect(() => { fetchGmailStatus(); }, []);
-
-  async function fetchGmailStatus() {
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_URL}/gmail/status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setGmailConnected(data.connected);
-    } catch {
-      setGmailConnected(false);
-    }
-  }
-
-  async function handleGmailConnect() {
-    const token = await getToken();
-    const url = `${API_URL}/gmail/connect?token=${token}`;
-    const result = await WebBrowser.openAuthSessionAsync(url);
-    if (result.type === 'success') {
-      await fetchGmailStatus();
-    }
-  }
-
-  async function handleGmailSync() {
-    setSyncStatus('syncing');
-    setSyncMessage(null);
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_URL}/gmail/sync`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setSyncMessage(data.message);
-      setSyncStatus('done');
-    } catch {
-      setSyncStatus('error');
-      setSyncMessage('Sync failed. Please try again.');
-    }
-  }
-
-  function handleGmailDisconnect() {
-    Alert.alert(
-      'Disconnect Gmail',
-      'Automatic sync will stop. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Disconnect', style: 'destructive',
-          onPress: async () => {
-            setDisconnecting(true);
-            try {
-              const token = await getToken();
-              await fetch(`${API_URL}/gmail/disconnect`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              setGmailConnected(false);
-            } catch {
-              Alert.alert('Error', 'Failed to disconnect. Please try again.');
-            } finally {
-              setDisconnecting(false);
-            }
-          },
-        },
-      ],
-    );
-  }
 
   async function handleSmsSync() {
     if (Platform.OS !== 'android') {
@@ -320,7 +242,7 @@ export default function ImportScreen() {
 
         {/* ── Google Takeout ─────────────────────────────────────────────────── */}
         <Text style={{ fontSize: 12, fontWeight: '600', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>
-          IMPORT TRANSACTIONS
+          IMPORT FROM GOOGLE PAY
         </Text>
 
         <View style={{
@@ -334,7 +256,7 @@ export default function ImportScreen() {
                 Google Takeout
               </Text>
               <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
-                Upload your Google Pay JSON export
+                Upload your Google Pay transaction history as JSON
               </Text>
             </View>
           </View>
@@ -343,13 +265,14 @@ export default function ImportScreen() {
             backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, marginBottom: 16,
           }}>
             <Text style={{ fontWeight: '600', color: '#374151', fontSize: 12, marginBottom: 8 }}>
-              How to get your file
+              How to export your Google Pay history
             </Text>
             {[
               'Go to takeout.google.com',
-              'Deselect all → select Google Pay',
-              'Create export and download ZIP',
-              'Extract the .json file inside',
+              'Tap "Deselect all", then select Google Pay',
+              'Tap "Next step" → "Create export"',
+              'Download the ZIP file from your email',
+              'Extract and find the .json file inside',
               'Upload it below',
             ].map((step, i) => (
               <View key={i} style={{ flexDirection: 'row', gap: 8, marginBottom: 4 }}>
@@ -378,7 +301,7 @@ export default function ImportScreen() {
             <View style={{ alignItems: 'center', paddingVertical: 24 }}>
               <ActivityIndicator color="#6366f1" size="large" />
               <Text style={{ color: '#6b7280', fontSize: 13, marginTop: 12 }}>
-                Importing transactions...
+                Importing transactions…
               </Text>
             </View>
           )}
@@ -422,97 +345,6 @@ export default function ImportScreen() {
               </TouchableOpacity>
             </View>
           )}
-        </View>
-
-        {/* ── Gmail Integration ──────────────────────────────────────────────── */}
-        <Text style={{ fontSize: 12, fontWeight: '600', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>
-          GMAIL INTEGRATION
-        </Text>
-
-        <View style={{
-          backgroundColor: '#fff', borderRadius: 16, padding: 16,
-          borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 20,
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <Text style={{ fontSize: 28 }}>📧</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15 }}>
-                Gmail Auto-Sync
-              </Text>
-              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
-                Sync Google Pay transactions every hour
-              </Text>
-            </View>
-            <View style={{
-              width: 8, height: 8, borderRadius: 4,
-              backgroundColor: gmailConnected ? '#22c55e' : '#d1d5db',
-            }} />
-          </View>
-
-          {gmailConnected === null && (
-            <ActivityIndicator color="#6366f1" />
-          )}
-
-          {gmailConnected === false && (
-            <TouchableOpacity
-              onPress={handleGmailConnect}
-              style={{ backgroundColor: '#111827', borderRadius: 100, paddingVertical: 14, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Connect Gmail</Text>
-            </TouchableOpacity>
-          )}
-
-          {gmailConnected === true && (
-            <View style={{ gap: 10 }}>
-              <Text style={{ fontSize: 12, color: '#22c55e', fontWeight: '600', textAlign: 'center', marginBottom: 4 }}>
-                Connected — syncing every hour
-              </Text>
-
-              <TouchableOpacity
-                onPress={handleGmailSync}
-                disabled={syncStatus === 'syncing'}
-                style={{
-                  backgroundColor: '#111827', borderRadius: 100,
-                  paddingVertical: 14, alignItems: 'center', opacity: syncStatus === 'syncing' ? 0.5 : 1,
-                }}
-              >
-                {syncStatus === 'syncing'
-                  ? <ActivityIndicator color="#fff" size="small" />
-                  : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Sync Now</Text>
-                }
-              </TouchableOpacity>
-
-              {syncMessage && (
-                <Text style={{
-                  fontSize: 12, textAlign: 'center',
-                  color: syncStatus === 'error' ? '#ef4444' : '#6b7280',
-                }}>
-                  {syncMessage}
-                </Text>
-              )}
-
-              <TouchableOpacity
-                onPress={handleGmailDisconnect}
-                disabled={disconnecting}
-                style={{
-                  borderWidth: 1, borderColor: '#fecaca', borderRadius: 100,
-                  paddingVertical: 14, alignItems: 'center', opacity: disconnecting ? 0.5 : 1,
-                }}
-              >
-                <Text style={{ color: '#ef4444', fontWeight: '600', fontSize: 14 }}>
-                  {disconnecting ? 'Disconnecting...' : 'Disconnect Gmail'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <View style={{
-            backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, marginTop: 16, gap: 4,
-          }}>
-            <Text style={{ fontSize: 12, color: '#6b7280' }}>🔒 Read-only access to Gmail</Text>
-            <Text style={{ fontSize: 12, color: '#6b7280' }}>📩 Only reads Google Pay emails</Text>
-            <Text style={{ fontSize: 12, color: '#6b7280' }}>🗑️ Tokens deleted on disconnect</Text>
-          </View>
         </View>
 
         {/* ── Bank SMS Sync ─────────────────────────────────────────────────── */}
@@ -566,7 +398,7 @@ export default function ImportScreen() {
 
               <View style={{ backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, marginBottom: 16, gap: 4 }}>
                 <Text style={{ fontSize: 12, color: '#6b7280' }}>📩 Reads bank SMS from your inbox</Text>
-                <Text style={{ fontSize: 12, color: '#6b7280' }}>🔄 Skips transactions already in Google Pay</Text>
+                <Text style={{ fontSize: 12, color: '#6b7280' }}>🔄 Skips transactions already imported</Text>
                 <Text style={{ fontSize: 12, color: '#6b7280' }}>🏧 Prompts to add ATM cash to Cash in Hand</Text>
                 <Text style={{ fontSize: 12, color: '#6b7280' }}>📅 Only reads SMS since your last sync</Text>
               </View>
@@ -601,7 +433,7 @@ export default function ImportScreen() {
                     <Text style={{ fontWeight: '800', color: '#111827', fontSize: 16 }}>Sync Complete!</Text>
                     {smsResult.atmTransactions.length > 0 && (
                       <Text style={{ color: '#f97316', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
-                        {smsResult.atmTransactions.length} ATM withdrawal{smsResult.atmTransactions.length > 1 ? 's' : ''} detected — check Cash in Hand prompts
+                        {smsResult.atmTransactions.length} ATM withdrawal{smsResult.atmTransactions.length > 1 ? 's' : ''} detected
                       </Text>
                     )}
                   </View>
