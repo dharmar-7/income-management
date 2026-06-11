@@ -19,14 +19,9 @@ export interface TransactionFilters {
 export class TransactionsService {
   constructor(private prisma: PrismaService) {}
 
-  // Resolve internal DB userId from Clerk ID
-  private async resolveUserId(clerkId: string): Promise<string> {
-    const user = await this.prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('User not found. Please log in again.');
-    return user.id;
+  // Resolve internal DB userId from Clerk ID (cached in PrismaService)
+  private resolveUserId(clerkId: string): Promise<string> {
+    return this.prisma.resolveUserId(clerkId);
   }
 
   // Paginated + filtered transaction list
@@ -84,29 +79,20 @@ export class TransactionsService {
     const startOfMonth = new Date(y, m - 1, 1);
     const endOfMonth = new Date(y, m, 0, 23, 59, 59);
 
-    const [income, expenses, refunds, investments] = await Promise.all([
-      this.prisma.transaction.aggregate({
-        where: { userId, type: TransactionType.CREDIT, date: { gte: startOfMonth, lte: endOfMonth } },
-        _sum: { amount: true },
-      }),
-      this.prisma.transaction.aggregate({
-        where: { userId, type: TransactionType.DEBIT, date: { gte: startOfMonth, lte: endOfMonth } },
-        _sum: { amount: true },
-      }),
-      this.prisma.transaction.aggregate({
-        where: { userId, type: TransactionType.REFUND, date: { gte: startOfMonth, lte: endOfMonth } },
-        _sum: { amount: true },
-      }),
-      this.prisma.transaction.aggregate({
-        where: { userId, type: TransactionType.INVESTMENT, date: { gte: startOfMonth, lte: endOfMonth } },
-        _sum: { amount: true },
-      }),
-    ]);
+    // One grouped query instead of four separate aggregates — Postgres sums
+    // every type in a single round-trip.
+    const grouped = await this.prisma.transaction.groupBy({
+      by: ['type'],
+      where: { userId, date: { gte: startOfMonth, lte: endOfMonth } },
+      _sum: { amount: true },
+    });
+    const sumByType = (t: TransactionType) =>
+      grouped.find(g => g.type === t)?._sum.amount ?? 0;
 
-    const totalIncome = income._sum.amount ?? 0;
-    const totalExpenses = expenses._sum.amount ?? 0;
-    const totalRefunds = refunds._sum.amount ?? 0;
-    const totalInvestments = investments._sum.amount ?? 0;
+    const totalIncome = sumByType(TransactionType.CREDIT);
+    const totalExpenses = sumByType(TransactionType.DEBIT);
+    const totalRefunds = sumByType(TransactionType.REFUND);
+    const totalInvestments = sumByType(TransactionType.INVESTMENT);
     // Refunds reduce expenses; INVESTMENT transfers are excluded entirely
     const netExpenses = totalExpenses - totalRefunds;
 

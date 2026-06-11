@@ -8,7 +8,7 @@ import { TransactionType, ImportSource } from '@prisma/client';
 // jest.fn() creates a function that records calls and returns undefined by default.
 // .mockResolvedValue() makes it return a Promise that resolves to the given value.
 function makeMockPrisma() {
-  return {
+  const prisma: any = {
     user: {
       findUnique: jest.fn(),
     },
@@ -26,6 +26,13 @@ function makeMockPrisma() {
       findMany: jest.fn(),
     },
   };
+  // Mirror PrismaService.resolveUserId so existing user.findUnique mocks still drive behaviour
+  prisma.resolveUserId = jest.fn(async (clerkId: string) => {
+    const u = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
+    if (!u) throw new NotFoundException('User not found.');
+    return u.id;
+  });
+  return prisma;
 }
 
 describe('TransactionsService', () => {
@@ -146,9 +153,10 @@ describe('TransactionsService', () => {
     });
 
     it('returns correct summary structure', async () => {
-      prisma.transaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 50000 } })  // income
-        .mockResolvedValueOnce({ _sum: { amount: 30000 } }); // expenses
+      prisma.transaction.groupBy.mockResolvedValue([
+        { type: TransactionType.CREDIT, _sum: { amount: 50000 } },
+        { type: TransactionType.DEBIT, _sum: { amount: 30000 } },
+      ]);
 
       const result = await service.getSummary(CLERK_ID, 4, 2026);
 
@@ -160,9 +168,7 @@ describe('TransactionsService', () => {
     });
 
     it('handles zero amounts (new user with no transactions)', async () => {
-      prisma.transaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: null } })
-        .mockResolvedValueOnce({ _sum: { amount: null } });
+      prisma.transaction.groupBy.mockResolvedValue([]);
 
       const result = await service.getSummary(CLERK_ID, 4, 2026);
 
@@ -172,9 +178,10 @@ describe('TransactionsService', () => {
     });
 
     it('calculates negative netSavings when expenses exceed income', async () => {
-      prisma.transaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 10000 } })
-        .mockResolvedValueOnce({ _sum: { amount: 15000 } });
+      prisma.transaction.groupBy.mockResolvedValue([
+        { type: TransactionType.CREDIT, _sum: { amount: 10000 } },
+        { type: TransactionType.DEBIT, _sum: { amount: 15000 } },
+      ]);
 
       const result = await service.getSummary(CLERK_ID, 4, 2026);
       expect(result.netSavings).toBe(-5000);

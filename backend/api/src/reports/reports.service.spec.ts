@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TransactionType } from '@prisma/client';
 
 function makeMockPrisma() {
-  return {
+  const prisma: any = {
     user: { findUnique: jest.fn() },
     transaction: {
       aggregate: jest.fn(),
@@ -15,6 +15,13 @@ function makeMockPrisma() {
     },
     category: { findMany: jest.fn() },
   };
+  // Mirror PrismaService.resolveUserId so existing user.findUnique mocks still drive behaviour
+  prisma.resolveUserId = jest.fn(async (clerkId: string) => {
+    const u = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
+    if (!u) throw new NotFoundException('User not found.');
+    return u.id;
+  });
+  return prisma;
 }
 
 describe('ReportsService', () => {

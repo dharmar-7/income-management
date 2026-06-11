@@ -1,6 +1,6 @@
 import { SignInButton, Show } from '@clerk/nextjs';
 import Link from 'next/link';
-import PrismLogo from '@/components/PrismLogo';
+import VeloraLogo from '@/components/VeloraLogo';
 
 const FEATURES = [
   {
@@ -33,7 +33,7 @@ export default function Home() {
 
       {/* ── Hero ── */}
       <div className="flex flex-col items-center gap-4 text-center">
-        <PrismLogo size={40} wordmarkSize="lg" />
+        <VeloraLogo size={40} wordmarkSize="lg" />
         <p className="text-gray-500 text-base max-w-xs leading-relaxed">
           Your spending, broken into clarity.
         </p>

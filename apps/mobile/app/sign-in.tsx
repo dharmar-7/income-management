@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
-import PrismLogoMobile from '@/components/PrismLogoMobile';
+import VeloraLogoMobile from '@/components/VeloraLogoMobile';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -36,7 +36,7 @@ export default function SignInScreen() {
           redirectUrlComplete: '/',
         });
       } else {
-        // scheme updated from 'income' to 'prism' to match app.json
+        // scheme updated from 'income' to 'velora' to match app.json
         const redirectUrl = AuthSession.makeRedirectUri({ scheme: 'velora', path: 'sso-callback' });
         const { createdSessionId, setActive } = await startSSOFlow({
           strategy: 'oauth_google',
@@ -65,7 +65,7 @@ export default function SignInScreen() {
 
         {/* ── Top: Logo + tagline ── */}
         <View style={{ alignItems: 'center', gap: 12 }}>
-          <PrismLogoMobile size="lg" />
+          <VeloraLogoMobile size="lg" />
           <Text style={{
             fontSize: 15, color: '#6b7280',
             textAlign: 'center', lineHeight: 22, marginTop: 4,
@@ -119,7 +119,7 @@ export default function SignInScreen() {
 
         {/* ── Bottom: CTA ── */}
         <View style={{ gap: 12 }}>
-          {/* Spectrum accent bar — echoes the prism icon */}
+          {/* Spectrum accent bar — echoes the Velora gem */}
           <View style={{ flexDirection: 'row', height: 3, borderRadius: 2, overflow: 'hidden', marginBottom: 2 }}>
             {['#8b5cf6', '#6366f1', '#06b6d4', '#22c55e', '#f97316', '#f43f5e'].map((c, i) => (
               <View key={i} style={{ flex: 1, backgroundColor: c }} />

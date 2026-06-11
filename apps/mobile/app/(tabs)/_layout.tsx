@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
-import PrismLogoMobile from '@/components/PrismLogoMobile';
+import VeloraLogoMobile from '@/components/VeloraLogoMobile';
 import GlowStripTabBar from '@/components/GlowStripTabBar';
 
 export default function TabLayout() {
@@ -15,7 +15,7 @@ export default function TabLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: bg },
         headerShadowVisible: false,
-        headerTitle: () => <PrismLogoMobile size="md" />,
+        headerTitle: () => <VeloraLogoMobile size="md" />,
         sceneStyle: { paddingBottom: 110 },
       }}
     >

@@ -6,13 +6,8 @@ import { TransactionType } from '@prisma/client';
 export class BudgetsService {
   constructor(private prisma: PrismaService) {}
 
-  private async resolveUserId(clerkId: string): Promise<string> {
-    const user = await this.prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('User not found.');
-    return user.id;
+  private resolveUserId(clerkId: string): Promise<string> {
+    return this.prisma.resolveUserId(clerkId);
   }
 
   // List all budgets for a given month, enriched with how much was actually spent
@@ -32,32 +27,36 @@ export class BudgetsService {
       orderBy: { category: { name: 'asc' } },
     });
 
-    // For each budget, calculate how much has been spent in that category this month
-    const results = await Promise.all(
-      budgets.map(async (budget) => {
-        const agg = await this.prisma.transaction.aggregate({
-          where: {
-            userId,
-            categoryId: budget.categoryId,
-            type: TransactionType.DEBIT,
-            date: { gte: startOfMonth, lte: endOfMonth },
-          },
-          _sum: { amount: true },
-        });
-
-        const spent = agg._sum.amount ?? 0;
-        return {
-          id: budget.id,
-          amount: budget.amount,
-          month: budget.month,
-          year: budget.year,
-          category: budget.category,
-          spent,
-          remaining: budget.amount - spent,
-          percentUsed: budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0,
-        };
-      }),
+    // Spend-per-category for this month in ONE grouped query (replaces the old
+    // N+1 — one aggregate per budget). Budgets are unique per category per month,
+    // so categoryId is a safe lookup key.
+    const spentRows = await this.prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where: {
+        userId,
+        type: TransactionType.DEBIT,
+        date: { gte: startOfMonth, lte: endOfMonth },
+        categoryId: { in: budgets.map(b => b.categoryId) },
+      },
+      _sum: { amount: true },
+    });
+    const spentByCategory = new Map(
+      spentRows.map(r => [r.categoryId, r._sum.amount ?? 0]),
     );
+
+    const results = budgets.map((budget) => {
+      const spent = spentByCategory.get(budget.categoryId) ?? 0;
+      return {
+        id: budget.id,
+        amount: budget.amount,
+        month: budget.month,
+        year: budget.year,
+        category: budget.category,
+        spent,
+        remaining: budget.amount - spent,
+        percentUsed: budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0,
+      };
+    });
 
     return { data: results, month: m, year: y };
   }

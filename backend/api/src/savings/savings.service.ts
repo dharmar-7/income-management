@@ -9,13 +9,8 @@ import { UpdateSavingDto } from './dto/update-saving.dto';
 export class SavingsService {
   constructor(private prisma: PrismaService) {}
 
-  private async resolveUserId(clerkId: string): Promise<string> {
-    const user = await this.prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('User not found.');
-    return user.id;
+  private resolveUserId(clerkId: string): Promise<string> {
+    return this.prisma.resolveUserId(clerkId);
   }
 
   // ─── Platform (wallet) ────────────────────────────────────────────────────

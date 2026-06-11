@@ -1,17 +1,17 @@
 // Primary logo: Faceted Crystal hexagon (Full Spectrum Rainbow)
 // Secondary export: ArcsIcon (Signal Arcs — Electric Trifecta) used for favicon / tiny sizes
 
-interface PrismLogoProps {
+interface VeloraLogoProps {
   size?: number;
   showWordmark?: boolean;
   wordmarkSize?: 'sm' | 'md' | 'lg';
 }
 
-export default function PrismLogo({
+export default function VeloraLogo({
   size = 28,
   showWordmark = true,
   wordmarkSize = 'md',
-}: PrismLogoProps) {
+}: VeloraLogoProps) {
   const fontSize =
     wordmarkSize === 'sm' ? '0.95rem'
     : wordmarkSize === 'lg' ? '1.5rem'
@@ -96,6 +96,3 @@ export function ArcsIcon({ size = 28 }: { size?: number }) {
     </svg>
   );
 }
-
-// Keep old name as alias so any existing imports still compile
-export { CrystalIcon as PrismIcon };

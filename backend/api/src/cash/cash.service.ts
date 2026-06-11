@@ -8,32 +8,25 @@ import { SpendCashDto } from './dto/spend-cash.dto';
 export class CashService {
   constructor(private prisma: PrismaService) {}
 
-  private async resolveUserId(clerkId: string): Promise<string> {
-    const user = await this.prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('User not found.');
-    return user.id;
+  private resolveUserId(clerkId: string): Promise<string> {
+    return this.prisma.resolveUserId(clerkId);
   }
 
   // Current cash balance = SUM(IN) - SUM(OUT)
   async getBalance(clerkId: string) {
     const userId = await this.resolveUserId(clerkId);
 
-    const [inSum, outSum] = await Promise.all([
-      this.prisma.cashTransaction.aggregate({
-        where: { userId, flow: CashFlow.IN },
-        _sum: { amount: true },
-      }),
-      this.prisma.cashTransaction.aggregate({
-        where: { userId, flow: CashFlow.OUT },
-        _sum: { amount: true },
-      }),
-    ]);
+    // Single grouped query — sums IN and OUT in one DB round-trip.
+    const grouped = await this.prisma.cashTransaction.groupBy({
+      by: ['flow'],
+      where: { userId },
+      _sum: { amount: true },
+    });
+    const sumByFlow = (f: CashFlow) =>
+      grouped.find(g => g.flow === f)?._sum.amount ?? 0;
 
-    const totalIn = inSum._sum.amount ?? 0;
-    const totalOut = outSum._sum.amount ?? 0;
+    const totalIn = sumByFlow(CashFlow.IN);
+    const totalOut = sumByFlow(CashFlow.OUT);
     const balance = totalIn - totalOut;
 
     return { balance, totalIn, totalOut };

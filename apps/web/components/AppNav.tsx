@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
-import PrismLogo from '@/components/PrismLogo';
+import VeloraLogo from '@/components/VeloraLogo';
 import { useTheme } from '@/context/ThemeContext';
 
 const NAV_ITEMS = [
@@ -24,7 +24,7 @@ export default function AppNav() {
   return (
     <nav className="bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-200/60 dark:border-white/8 px-6 py-3 flex items-center justify-between sticky top-0 z-50">
       <Link href="/dashboard" className="mr-8">
-        <PrismLogo size={28} wordmarkSize="md" />
+        <VeloraLogo size={28} wordmarkSize="md" />
       </Link>
 
       <div className="flex items-center gap-1 flex-1">

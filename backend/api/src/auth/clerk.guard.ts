@@ -21,9 +21,12 @@ export class ClerkAuthGuard implements CanActivate {
     const token = authHeader.split(' ')[1];
 
     try {
-      // Verify the JWT token with Clerk
+      // Verify the JWT token with Clerk. If CLERK_JWT_KEY (the instance's PEM
+      // public key) is set, verification is fully networkless — no JWKS fetch on
+      // cold starts, which otherwise adds latency to the first request.
       const payload = await verifyToken(token, {
         secretKey: process.env.CLERK_SECRET_KEY,
+        ...(process.env.CLERK_JWT_KEY && { jwtKey: process.env.CLERK_JWT_KEY }),
       });
 
       // Attach the user's Clerk ID to the request so controllers can use it

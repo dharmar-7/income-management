@@ -6,12 +6,13 @@ import { CashFlow } from '@prisma/client';
 
 // ─── Mock Prisma ──────────────────────────────────────────────────────────────
 function makeMockPrisma() {
-  return {
+  const prisma: any = {
     user: {
       findUnique: jest.fn(),
     },
     cashTransaction: {
       aggregate: jest.fn(),
+      groupBy: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
       create: jest.fn(),
@@ -19,6 +20,13 @@ function makeMockPrisma() {
       delete: jest.fn(),
     },
   };
+  // Mirror PrismaService.resolveUserId so existing user.findUnique mocks still drive behaviour
+  prisma.resolveUserId = jest.fn(async (clerkId: string) => {
+    const u = await prisma.user.findUnique({ where: { clerkId }, select: { id: true } });
+    if (!u) throw new NotFoundException('User not found.');
+    return u.id;
+  });
+  return prisma;
 }
 
 describe('CashService', () => {
@@ -65,9 +73,10 @@ describe('CashService', () => {
     });
 
     it('returns balance = totalIn - totalOut', async () => {
-      prisma.cashTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 5000 } })  // IN
-        .mockResolvedValueOnce({ _sum: { amount: 1500 } }); // OUT
+      prisma.cashTransaction.groupBy.mockResolvedValue([
+        { flow: CashFlow.IN, _sum: { amount: 5000 } },
+        { flow: CashFlow.OUT, _sum: { amount: 1500 } },
+      ]);
 
       const result = await service.getBalance(CLERK_ID);
 
@@ -77,9 +86,7 @@ describe('CashService', () => {
     });
 
     it('returns zero balance for a new user with no transactions', async () => {
-      prisma.cashTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: null } })
-        .mockResolvedValueOnce({ _sum: { amount: null } });
+      prisma.cashTransaction.groupBy.mockResolvedValue([]);
 
       const result = await service.getBalance(CLERK_ID);
 
@@ -88,16 +95,18 @@ describe('CashService', () => {
       expect(result.totalOut).toBe(0);
     });
 
-    it('queries IN and OUT separately with correct flow filters', async () => {
-      prisma.cashTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 1000 } })
-        .mockResolvedValueOnce({ _sum: { amount: 200 } });
+    it('sums IN and OUT in a single grouped query', async () => {
+      prisma.cashTransaction.groupBy.mockResolvedValue([
+        { flow: CashFlow.IN, _sum: { amount: 1000 } },
+        { flow: CashFlow.OUT, _sum: { amount: 200 } },
+      ]);
 
       await service.getBalance(CLERK_ID);
 
-      const [inCall, outCall] = prisma.cashTransaction.aggregate.mock.calls;
-      expect(inCall[0].where.flow).toBe(CashFlow.IN);
-      expect(outCall[0].where.flow).toBe(CashFlow.OUT);
+      expect(prisma.cashTransaction.groupBy).toHaveBeenCalledTimes(1);
+      const arg = prisma.cashTransaction.groupBy.mock.calls[0][0];
+      expect(arg.by).toEqual(['flow']);
+      expect(arg.where.userId).toBe(MOCK_USER.id);
     });
   });
 
@@ -187,9 +196,10 @@ describe('CashService', () => {
 
     it('creates a CashTransaction with flow = OUT when balance is sufficient', async () => {
       // Balance = 5000 - 0 = 5000
-      prisma.cashTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 5000 } }) // IN
-        .mockResolvedValueOnce({ _sum: { amount: 0 } });   // OUT
+      prisma.cashTransaction.groupBy.mockResolvedValue([
+        { flow: CashFlow.IN, _sum: { amount: 5000 } },
+        { flow: CashFlow.OUT, _sum: { amount: 0 } },
+      ]);
 
       const created = { id: 'c-2', amount: 500, flow: CashFlow.OUT };
       prisma.cashTransaction.create.mockResolvedValue(created);
@@ -205,9 +215,10 @@ describe('CashService', () => {
 
     it('throws BadRequestException when spending more than balance', async () => {
       // Balance = 200
-      prisma.cashTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 200 } })
-        .mockResolvedValueOnce({ _sum: { amount: 0 } });
+      prisma.cashTransaction.groupBy.mockResolvedValue([
+        { flow: CashFlow.IN, _sum: { amount: 200 } },
+        { flow: CashFlow.OUT, _sum: { amount: 0 } },
+      ]);
 
       await expect(
         service.spendCash(CLERK_ID, { amount: 500, source: 'SPENT', date: '2026-05-09' }),
@@ -215,9 +226,7 @@ describe('CashService', () => {
     });
 
     it('throws BadRequestException when cash balance is zero', async () => {
-      prisma.cashTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: null } })
-        .mockResolvedValueOnce({ _sum: { amount: null } });
+      prisma.cashTransaction.groupBy.mockResolvedValue([]);
 
       await expect(
         service.spendCash(CLERK_ID, { amount: 100, source: 'SPENT', date: '2026-05-09' }),
@@ -226,9 +235,10 @@ describe('CashService', () => {
 
     it('allows spending exactly the full balance', async () => {
       // Balance = exactly 500
-      prisma.cashTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 500 } })
-        .mockResolvedValueOnce({ _sum: { amount: 0 } });
+      prisma.cashTransaction.groupBy.mockResolvedValue([
+        { flow: CashFlow.IN, _sum: { amount: 500 } },
+        { flow: CashFlow.OUT, _sum: { amount: 0 } },
+      ]);
 
       prisma.cashTransaction.create.mockResolvedValue({ id: 'c-3' });
 

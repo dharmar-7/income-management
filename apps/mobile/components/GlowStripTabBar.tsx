@@ -6,6 +6,7 @@ import {
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import VeloraGem from '@/components/VeloraGem';
 
 const MAIN = ['index', 'transactions', 'budgets', 'savings'] as const;
 type MainRoute = (typeof MAIN)[number];
@@ -90,7 +91,7 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
           {/* Crystal gem — centre tab */}
           <TouchableOpacity style={s.ti} onPress={() => setOpen(o => !o)} activeOpacity={0.7}>
             <View style={[s.ic, gemActive && (dark ? s.icActiveDark : s.icActiveLight), open && s.icOpen]}>
-              <GemIcon />
+              <VeloraGem size={20} />
             </View>
             <View style={[s.dot, (gemActive || open) && s.dotActive]} />
             <Text style={[s.tabLabel, { color: (gemActive || open) ? '#6366f1' : dark ? 'rgba(255,255,255,0.75)' : '#52525b' }]}>
@@ -119,34 +120,6 @@ function TabItem({
         {label}
       </Text>
     </TouchableOpacity>
-  );
-}
-
-function GemIcon() {
-  const size = 20;
-  const r    = Math.round(size * 0.14);
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Outer rotates; inner clips — avoids Android overflow+transform bug */}
-      <View style={{ width: size, height: size, transform: [{ rotate: '45deg' }] }}>
-        <View style={{ width: '100%', height: '100%', borderRadius: r, overflow: 'hidden' }}>
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={{ flex: 1, backgroundColor: '#f72585' }} />
-            <View style={{ flex: 1, backgroundColor: '#ff9100' }} />
-          </View>
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={{ flex: 1, backgroundColor: '#bf5af2' }} />
-            <View style={{ flex: 1, backgroundColor: '#32d74b' }} />
-          </View>
-          <View style={{
-            position: 'absolute', top: '8%', left: '8%',
-            width: '36%', height: '36%',
-            backgroundColor: 'rgba(255,255,255,0.3)',
-            borderRadius: 2,
-          }} />
-        </View>
-      </View>
-    </View>
   );
 }
 
