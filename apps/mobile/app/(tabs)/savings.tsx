@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 import AddSavingSheet from '@/components/AddSavingSheet';
+import AppAlert from '@/components/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -82,6 +82,11 @@ export default function SavingsScreen() {
   const queryClient = useQueryClient();
 
   const [sheetMode, setSheetMode] = useState<'platform' | 'saving' | null>(null);
+  const [alertData, setAlertData] = useState<{
+    title: string; message: string;
+    confirmLabel?: string; confirmDestructive?: boolean;
+    onConfirm?: () => void;
+  } | null>(null);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['savings-summary'] });
@@ -124,40 +129,40 @@ export default function SavingsScreen() {
     savingsQuery.refetch();
   }
 
-  async function deleteSaving(id: string, name: string) {
-    Alert.alert('Delete Investment', `Delete "${name}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          try {
-            const token = await getToken();
-            await apiFetch(`/savings/${id}`, token!, { method: 'DELETE' });
-            invalidate();
-          } catch {
-            Alert.alert('Error', 'Failed to delete investment.');
-          }
-        },
+  function deleteSaving(id: string, name: string) {
+    setAlertData({
+      title: 'Delete Investment',
+      message: `Delete "${name}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      confirmDestructive: true,
+      onConfirm: async () => {
+        try {
+          const token = await getToken();
+          await apiFetch(`/savings/${id}`, token!, { method: 'DELETE' });
+          invalidate();
+        } catch {
+          setAlertData({ title: 'Error', message: 'Failed to delete investment.' });
+        }
       },
-    ]);
+    });
   }
 
-  async function deletePlatform(id: string, name: string) {
-    Alert.alert('Delete Platform', `Delete "${name}" and all linked investments?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          try {
-            const token = await getToken();
-            await apiFetch(`/savings/platforms/${id}`, token!, { method: 'DELETE' });
-            invalidate();
-          } catch {
-            Alert.alert('Error', 'Failed to delete platform.');
-          }
-        },
+  function deletePlatform(id: string, name: string) {
+    setAlertData({
+      title: 'Delete Platform',
+      message: `Delete "${name}" and all linked investments?`,
+      confirmLabel: 'Delete',
+      confirmDestructive: true,
+      onConfirm: async () => {
+        try {
+          const token = await getToken();
+          await apiFetch(`/savings/platforms/${id}`, token!, { method: 'DELETE' });
+          invalidate();
+        } catch {
+          setAlertData({ title: 'Error', message: 'Failed to delete platform.' });
+        }
       },
-    ]);
+    });
   }
 
   const sum = summaryQuery.data;
@@ -296,6 +301,15 @@ export default function SavingsScreen() {
 
         <View style={{ height: 24 }} />
       </ScrollView>
+      <AppAlert
+        visible={!!alertData}
+        title={alertData?.title ?? ''}
+        message={alertData?.message ?? ''}
+        confirmLabel={alertData?.confirmLabel}
+        confirmDestructive={alertData?.confirmDestructive}
+        onClose={() => setAlertData(null)}
+        onConfirm={alertData?.onConfirm}
+      />
     </SafeAreaView>
   );
 }

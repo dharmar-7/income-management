@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, Platform, PermissionsAndroid,
+  ActivityIndicator, Platform, PermissionsAndroid,
 } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import * as DocumentPicker from 'expo-document-picker';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppAlert from '@/components/AppAlert';
 
 const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
@@ -47,18 +48,37 @@ export default function ImportScreen() {
   const [smsResult, setSmsResult] = useState<SmsSyncResult | null>(null);
   const [smsError, setSmsError] = useState<string | null>(null);
 
+  // ── Simple info alert ─────────────────────────────────────────────────────
+  const [alertData, setAlertData] = useState<{ title: string; message: string } | null>(null);
+
+  // ── ATM withdrawal queue ──────────────────────────────────────────────────
+  const [atmList, setAtmList] = useState<AtmEntry[]>([]);
+  const [atmIdx, setAtmIdx] = useState(0);
+  const [atmToken, setAtmToken] = useState('');
+
+  const atmEntry = atmList.length > 0 && atmIdx < atmList.length ? atmList[atmIdx] : null;
+
+  async function addAtmCash(atm: AtmEntry) {
+    try {
+      await fetch(`${API_URL}/cash/add`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${atmToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: atm.amount, source: 'ATM', date: atm.date, note: 'ATM withdrawal (from SMS)' }),
+      });
+    } catch { /* silent — user can add manually */ }
+  }
+
   async function handleSmsSync() {
     if (Platform.OS !== 'android') {
-      Alert.alert('Android Only', 'SMS reading is only available on Android devices.');
+      setAlertData({ title: 'Android Only', message: 'SMS reading is only available on Android devices.' });
       return;
     }
 
     if (IS_EXPO_GO) {
-      Alert.alert(
-        'Development Build Required',
-        'SMS reading uses a native Android library that cannot run inside Expo Go.\n\nTo use this feature, install the development build of the app (.apk) on your device.',
-        [{ text: 'Got it' }],
-      );
+      setAlertData({
+        title: 'Development Build Required',
+        message: 'SMS reading uses a native Android library that cannot run inside Expo Go.\n\nTo use this feature, install the development build of the app (.apk) on your device.',
+      });
       return;
     }
 
@@ -111,16 +131,9 @@ export default function ImportScreen() {
       setSmsStatus('syncing');
       const syncRes = await fetch(`${API_URL}/sms/sync`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: rawMessages.map(m => ({
-            body: m.body,
-            date: m.date,
-            address: m.address,
-          })),
+          messages: rawMessages.map(m => ({ body: m.body, date: m.date, address: m.address })),
         }),
       });
 
@@ -134,52 +147,14 @@ export default function ImportScreen() {
       setSmsStatus('done');
 
       if (result.atmTransactions.length > 0 && token) {
-        promptAtmCash(result.atmTransactions, 0, token);
+        setAtmList(result.atmTransactions);
+        setAtmIdx(0);
+        setAtmToken(token!);
       }
     } catch (err) {
       setSmsStatus('error');
       setSmsError(err instanceof Error ? err.message : 'Something went wrong.');
     }
-  }
-
-  async function promptAtmCash(list: AtmEntry[], index: number, token: string) {
-    if (index >= list.length) return;
-    const atm = list[index];
-    const dateLabel = new Date(atm.date).toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short',
-    });
-    Alert.alert(
-      'ATM Withdrawal Detected',
-      `You withdrew ₹${atm.amount.toLocaleString('en-IN')} on ${dateLabel}.\nAdd this to Cash in Hand?`,
-      [
-        {
-          text: 'Skip',
-          style: 'cancel',
-          onPress: () => promptAtmCash(list, index + 1, token),
-        },
-        {
-          text: 'Add Cash',
-          onPress: async () => {
-            try {
-              await fetch(`${API_URL}/cash/add`, {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  amount: atm.amount,
-                  source: 'ATM',
-                  date: atm.date,
-                  note: 'ATM withdrawal (from SMS)',
-                }),
-              });
-            } catch { /* silent — user can add manually */ }
-            promptAtmCash(list, index + 1, token);
-          },
-        },
-      ],
-    );
   }
 
   async function handlePickFile() {
@@ -206,12 +181,7 @@ export default function ImportScreen() {
 
       const token = await getToken();
       const formData = new FormData();
-
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name,
-        type: 'application/json',
-      } as unknown as Blob);
+      formData.append('file', { uri: file.uri, name: file.name, type: 'application/json' } as unknown as Blob);
 
       const res = await fetch(`${API_URL}/import/takeout`, {
         method: 'POST',
@@ -235,38 +205,24 @@ export default function ImportScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }} edges={['bottom']}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
-      >
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
 
-        {/* ── Google Takeout ─────────────────────────────────────────────────── */}
+        {/* ── Google Takeout ──────────────────────────────────────────── */}
         <Text style={{ fontSize: 12, fontWeight: '600', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>
           IMPORT FROM GOOGLE PAY
         </Text>
 
-        <View style={{
-          backgroundColor: '#fff', borderRadius: 16, padding: 16,
-          borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 20,
-        }}>
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 20 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <Text style={{ fontSize: 28 }}>📂</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15 }}>
-                Google Takeout
-              </Text>
-              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
-                Upload your Google Pay transaction history as JSON
-              </Text>
+              <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15 }}>Google Takeout</Text>
+              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>Upload your Google Pay transaction history as JSON</Text>
             </View>
           </View>
 
-          <View style={{
-            backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, marginBottom: 16,
-          }}>
-            <Text style={{ fontWeight: '600', color: '#374151', fontSize: 12, marginBottom: 8 }}>
-              How to export your Google Pay history
-            </Text>
+          <View style={{ backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+            <Text style={{ fontWeight: '600', color: '#374151', fontSize: 12, marginBottom: 8 }}>How to export your Google Pay history</Text>
             {[
               'Go to takeout.google.com',
               'Tap "Deselect all", then select Google Pay',
@@ -285,24 +241,17 @@ export default function ImportScreen() {
           {importStatus === 'idle' && (
             <TouchableOpacity
               onPress={handlePickFile}
-              style={{
-                borderWidth: 2, borderStyle: 'dashed', borderColor: '#c7d2fe',
-                borderRadius: 12, paddingVertical: 20, alignItems: 'center',
-              }}
+              style={{ borderWidth: 2, borderStyle: 'dashed', borderColor: '#c7d2fe', borderRadius: 12, paddingVertical: 20, alignItems: 'center' }}
             >
               <Text style={{ fontSize: 28, marginBottom: 6 }}>📁</Text>
-              <Text style={{ fontWeight: '600', color: '#6366f1', fontSize: 14 }}>
-                Tap to select JSON file
-              </Text>
+              <Text style={{ fontWeight: '600', color: '#6366f1', fontSize: 14 }}>Tap to select JSON file</Text>
             </TouchableOpacity>
           )}
 
           {importStatus === 'uploading' && (
             <View style={{ alignItems: 'center', paddingVertical: 24 }}>
               <ActivityIndicator color="#6366f1" size="large" />
-              <Text style={{ color: '#6b7280', fontSize: 13, marginTop: 12 }}>
-                Importing transactions…
-              </Text>
+              <Text style={{ color: '#6b7280', fontSize: 13, marginTop: 12 }}>Importing transactions…</Text>
             </View>
           )}
 
@@ -310,12 +259,8 @@ export default function ImportScreen() {
             <View>
               <View style={{ alignItems: 'center', marginBottom: 16 }}>
                 <Text style={{ fontSize: 36, marginBottom: 6 }}>✅</Text>
-                <Text style={{ fontWeight: '800', color: '#111827', fontSize: 16 }}>
-                  Import Complete!
-                </Text>
-                <Text style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>
-                  {importResult.message}
-                </Text>
+                <Text style={{ fontWeight: '800', color: '#111827', fontSize: 16 }}>Import Complete!</Text>
+                <Text style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>{importResult.message}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
                 <StatBadge value={importResult.imported} label="Imported" bg="#dcfce7" text="#15803d" />
@@ -334,9 +279,7 @@ export default function ImportScreen() {
           {importStatus === 'error' && (
             <View style={{ alignItems: 'center', paddingVertical: 16 }}>
               <Text style={{ fontSize: 32, marginBottom: 8 }}>❌</Text>
-              <Text style={{ color: '#ef4444', fontSize: 13, marginBottom: 16, textAlign: 'center' }}>
-                {importError}
-              </Text>
+              <Text style={{ color: '#ef4444', fontSize: 13, marginBottom: 16, textAlign: 'center' }}>{importError}</Text>
               <TouchableOpacity
                 onPress={() => { setImportStatus('idle'); setImportError(null); }}
                 style={{ backgroundColor: '#6366f1', borderRadius: 100, paddingHorizontal: 24, paddingVertical: 10 }}
@@ -347,24 +290,17 @@ export default function ImportScreen() {
           )}
         </View>
 
-        {/* ── Bank SMS Sync ─────────────────────────────────────────────────── */}
+        {/* ── Bank SMS Sync ───────────────────────────────────────────── */}
         <Text style={{ fontSize: 12, fontWeight: '600', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>
           BANK SMS SYNC
         </Text>
 
-        <View style={{
-          backgroundColor: '#fff', borderRadius: 16, padding: 16,
-          borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 20,
-        }}>
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 20 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
             <Text style={{ fontSize: 28 }}>💬</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15 }}>
-                Bank SMS Import
-              </Text>
-              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
-                Import IOB, TMB and other bank transactions from SMS
-              </Text>
+              <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15 }}>Bank SMS Import</Text>
+              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>Import IOB, TMB and other bank transactions from SMS</Text>
             </View>
             {Platform.OS !== 'android' && (
               <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 }}>
@@ -382,13 +318,8 @@ export default function ImportScreen() {
           ) : (
             <>
               {IS_EXPO_GO && (
-                <View style={{
-                  backgroundColor: '#fef3c7', borderRadius: 12, padding: 12, marginBottom: 16,
-                  borderWidth: 1, borderColor: '#fcd34d',
-                }}>
-                  <Text style={{ fontWeight: '700', color: '#92400e', fontSize: 13, marginBottom: 4 }}>
-                    Requires Development Build
-                  </Text>
+                <View style={{ backgroundColor: '#fef3c7', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#fcd34d' }}>
+                  <Text style={{ fontWeight: '700', color: '#92400e', fontSize: 13, marginBottom: 4 }}>Requires Development Build</Text>
                   <Text style={{ color: '#92400e', fontSize: 12, lineHeight: 18 }}>
                     You're running in Expo Go. SMS sync uses a native library that isn't available here.
                     Install the dev build (.apk) on your device to use this feature.
@@ -406,10 +337,7 @@ export default function ImportScreen() {
               {smsStatus === 'idle' && (
                 <TouchableOpacity
                   onPress={handleSmsSync}
-                  style={{
-                    backgroundColor: '#f97316', borderRadius: 100,
-                    paddingVertical: 14, alignItems: 'center',
-                  }}
+                  style={{ backgroundColor: '#f97316', borderRadius: 100, paddingVertical: 14, alignItems: 'center' }}
                 >
                   <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Sync Bank SMS</Text>
                 </TouchableOpacity>
@@ -454,9 +382,7 @@ export default function ImportScreen() {
               {smsStatus === 'error' && (
                 <View style={{ alignItems: 'center', paddingVertical: 8 }}>
                   <Text style={{ fontSize: 32, marginBottom: 8 }}>⚠️</Text>
-                  <Text style={{ color: '#ef4444', fontSize: 13, marginBottom: 16, textAlign: 'center' }}>
-                    {smsError}
-                  </Text>
+                  <Text style={{ color: '#ef4444', fontSize: 13, marginBottom: 16, textAlign: 'center' }}>{smsError}</Text>
                   <TouchableOpacity
                     onPress={() => { setSmsStatus('idle'); setSmsError(null); }}
                     style={{ backgroundColor: '#f97316', borderRadius: 100, paddingHorizontal: 24, paddingVertical: 10 }}
@@ -470,6 +396,27 @@ export default function ImportScreen() {
         </View>
 
       </ScrollView>
+
+      {/* Info alert (Android Only / Expo Go guard) */}
+      <AppAlert
+        visible={!!alertData}
+        title={alertData?.title ?? ''}
+        message={alertData?.message ?? ''}
+        onClose={() => setAlertData(null)}
+      />
+
+      {/* ATM withdrawal prompts — shown one at a time after SMS sync */}
+      {atmEntry && (
+        <AppAlert
+          visible
+          icon="🏧"
+          title="ATM Withdrawal Detected"
+          message={`You withdrew ₹${atmEntry.amount.toLocaleString('en-IN')} on ${new Date(atmEntry.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}.\nAdd this to Cash in Hand?`}
+          confirmLabel="Add Cash"
+          onClose={() => setAtmIdx(i => i + 1)}
+          onConfirm={() => addAtmCash(atmEntry)}
+        />
+      )}
     </SafeAreaView>
   );
 }

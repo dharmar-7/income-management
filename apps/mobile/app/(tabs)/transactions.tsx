@@ -9,12 +9,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 import AddTransactionSheet from '@/components/AddTransactionSheet';
+import AppAlert from '@/components/AppAlert';
 
 // ─── Debounce hook — same concept as the web app ─────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -66,33 +66,34 @@ export default function TransactionsScreen() {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showSheet, setShowSheet] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [alertData, setAlertData] = useState<{
+    title: string; message: string;
+    confirmLabel?: string; confirmDestructive?: boolean;
+    onConfirm?: () => void;
+  } | null>(null);
 
   // Reset to page 1 when search changes
   useEffect(() => { setPage(1); }, [search]);
 
-  async function handleDelete(id: string) {
-    Alert.alert(
-      'Delete Transaction',
-      'Are you sure? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive',
-          onPress: async () => {
-            setDeletingId(id);
-            try {
-              const token = await getToken();
-              await apiFetch(`/transactions/${id}`, token!, { method: 'DELETE' });
-              queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            } catch {
-              Alert.alert('Error', 'Failed to delete transaction.');
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ],
-    );
+  function handleDelete(id: string) {
+    setAlertData({
+      title: 'Delete Transaction',
+      message: 'Are you sure? This cannot be undone.',
+      confirmLabel: 'Delete',
+      confirmDestructive: true,
+      onConfirm: async () => {
+        setDeletingId(id);
+        try {
+          const token = await getToken();
+          await apiFetch(`/transactions/${id}`, token!, { method: 'DELETE' });
+          queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        } catch {
+          setAlertData({ title: 'Error', message: 'Failed to delete transaction.' });
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   }
 
   const params = new URLSearchParams({
@@ -297,6 +298,15 @@ export default function TransactionsScreen() {
       <TouchableOpacity style={styles.fab} onPress={() => setShowSheet(true)}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
+      <AppAlert
+        visible={!!alertData}
+        title={alertData?.title ?? ''}
+        message={alertData?.message ?? ''}
+        confirmLabel={alertData?.confirmLabel}
+        confirmDestructive={alertData?.confirmDestructive}
+        onClose={() => setAlertData(null)}
+        onConfirm={alertData?.onConfirm}
+      />
     </SafeAreaView>
   );
 }

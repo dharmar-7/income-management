@@ -13,10 +13,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
+import AppAlert from '@/components/AppAlert';
 
 interface BudgetWithProgress {
   id: string;
@@ -74,6 +74,8 @@ function AddBudgetSheet({
   const [month, setMonth] = useState(String(now.getMonth() + 1));
   const [year, setYear] = useState(String(now.getFullYear()));
   const [loading, setLoading] = useState(false);
+  const [alertData, setAlertData] = useState<{ title: string; message: string } | null>(null);
+  function showAlert(t: string, m: string) { setAlertData({ title: t, message: m }); }
 
   function reset() {
     setCategoryId('');
@@ -85,27 +87,27 @@ function AddBudgetSheet({
   function handleClose() { reset(); onClose(); }
 
   async function handleSubmit() {
-    if (!categoryId) { Alert.alert('Required', 'Please select a category.'); return; }
-    if (!amount) { Alert.alert('Required', 'Please enter an amount.'); return; }
+    if (!categoryId) { showAlert('Required', 'Please select a category.'); return; }
+    if (!amount) { showAlert('Required', 'Please enter an amount.'); return; }
     const parsed = parseFloat(amount);
-    if (isNaN(parsed) || parsed <= 0) { Alert.alert('Invalid', 'Enter a valid positive amount.'); return; }
+    if (isNaN(parsed) || parsed <= 0) { showAlert('Invalid', 'Enter a valid positive amount.'); return; }
     const m = parseInt(month, 10);
     const y = parseInt(year, 10);
-    if (isNaN(m) || m < 1 || m > 12) { Alert.alert('Invalid', 'Month must be 1–12.'); return; }
-    if (isNaN(y) || y < 2020) { Alert.alert('Invalid', 'Enter a valid year.'); return; }
+    if (isNaN(m) || m < 1 || m > 12) { showAlert('Invalid', 'Month must be 1–12.'); return; }
+    if (isNaN(y) || y < 2020) { showAlert('Invalid', 'Enter a valid year.'); return; }
 
     setLoading(true);
     try {
       const token = await getToken();
       await apiFetch('/budgets', token!, {
-        method: 'POST',
+        method: 'PUT',
         body: JSON.stringify({ categoryId, amount: parsed, month: m, year: y }),
       });
       reset();
       onSuccess();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'Could not save budget.');
+      showAlert('Error', err.message ?? 'Could not save budget.');
     } finally {
       setLoading(false);
     }
@@ -202,6 +204,12 @@ function AddBudgetSheet({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+      <AppAlert
+        visible={!!alertData}
+        title={alertData?.title ?? ''}
+        message={alertData?.message ?? ''}
+        onClose={() => setAlertData(null)}
+      />
     </Modal>
   );
 }
