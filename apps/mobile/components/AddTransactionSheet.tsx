@@ -10,10 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
+import AppAlert from '@/components/AppAlert';
 
 interface Category {
   id: string;
@@ -34,6 +35,8 @@ function todayISO() {
 
 export default function AddTransactionSheet({ visible, categories, onClose, onSuccess }: Props) {
   const { getToken } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
 
   const [txType, setTxType] = useState<'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT'>('DEBIT');
   const [amount, setAmount] = useState('');
@@ -61,17 +64,17 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
 
   async function handleSubmit() {
     if (!amount || !merchant || !date) {
-      Alert.alert('Missing fields', 'Amount, merchant, and date are required.');
+      setAlertInfo({ title: 'Missing fields', message: 'Amount, merchant, and date are required.' });
       return;
     }
     const parsed = parseFloat(amount);
     if (isNaN(parsed) || parsed <= 0) {
-      Alert.alert('Invalid amount', 'Please enter a valid amount.');
+      setAlertInfo({ title: 'Invalid amount', message: 'Please enter a valid amount.' });
       return;
     }
     // Basic date validation
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      Alert.alert('Invalid date', 'Enter date as YYYY-MM-DD.');
+      setAlertInfo({ title: 'Invalid date', message: 'Enter date as YYYY-MM-DD.' });
       return;
     }
 
@@ -93,7 +96,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
       onSuccess();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'Failed to add transaction.');
+      setAlertInfo({ title: 'Error', message: err.message ?? 'Failed to add transaction.' });
     } finally {
       setLoading(false);
     }
@@ -102,6 +105,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
   const selectedCategory = categories.find(c => c.id === categoryId);
 
   return (
+    <>
     <Modal
       visible={visible}
       animationType="slide"
@@ -126,7 +130,11 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+          >
 
             {/* Type toggle */}
             <View style={styles.typeToggle}>
@@ -269,11 +277,18 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
               }
             </TouchableOpacity>
 
-            <View style={{ height: 32 }} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
+
+    <AppAlert
+      visible={alertInfo !== null}
+      title={alertInfo?.title ?? ''}
+      message={alertInfo?.message ?? ''}
+      onClose={() => setAlertInfo(null)}
+    />
+    </>
   );
 }
 

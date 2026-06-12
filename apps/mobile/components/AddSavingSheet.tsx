@@ -10,10 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
+import AppAlert from '@/components/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -65,6 +66,8 @@ function formatINR(n: number) {
 
 function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { getToken } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
   const [name, setName] = useState('');
   const [totalAdded, setTotalAdded] = useState('');
   const [note, setNote] = useState('');
@@ -72,12 +75,12 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
 
   async function handleSubmit() {
     if (!name.trim() || !totalAdded) {
-      Alert.alert('Missing fields', 'Platform name and amount are required.');
+      setAlertInfo({ title: 'Missing fields', message: 'Platform name and amount are required.' });
       return;
     }
     const amount = parseFloat(totalAdded);
     if (isNaN(amount) || amount <= 0) {
-      Alert.alert('Invalid amount', 'Enter a valid positive amount.');
+      setAlertInfo({ title: 'Invalid amount', message: 'Enter a valid positive amount.' });
       return;
     }
     setLoading(true);
@@ -94,14 +97,19 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
       onSuccess();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'Failed to add platform.');
+      setAlertInfo({ title: 'Error', message: err.message ?? 'Failed to add platform.' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+    >
       <Text style={styles.hint}>
         A platform is your in-app wallet (e.g. Groww, Zerodha). Add the total amount you've transferred into it.
       </Text>
@@ -152,8 +160,15 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
           : <Text style={styles.submitText}>Add Platform</Text>
         }
       </TouchableOpacity>
-      <View style={{ height: 32 }} />
     </ScrollView>
+
+    <AppAlert
+      visible={alertInfo !== null}
+      title={alertInfo?.title ?? ''}
+      message={alertInfo?.message ?? ''}
+      onClose={() => setAlertInfo(null)}
+    />
+    </>
   );
 }
 
@@ -161,6 +176,8 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
 
 function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: InvestmentPlatform[]; onClose: () => void; onSuccess: () => void }) {
   const { getToken } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
   const [savingType, setSavingType] = useState<SavingType>('MUTUAL_FUNDS');
   const [name, setName] = useState('');
   const [investedAmount, setInvestedAmount] = useState('');
@@ -174,15 +191,15 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
 
   async function handleSubmit() {
     if (!name.trim() || !investedAmount || !currentValue || !startDate) {
-      Alert.alert('Missing fields', 'Name, invested amount, current value, and start date are required.');
+      setAlertInfo({ title: 'Missing fields', message: 'Name, invested amount, current value, and start date are required.' });
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      Alert.alert('Invalid date', 'Enter start date as YYYY-MM-DD.');
+      setAlertInfo({ title: 'Invalid date', message: 'Enter start date as YYYY-MM-DD.' });
       return;
     }
     if (maturityDate && !/^\d{4}-\d{2}-\d{2}$/.test(maturityDate)) {
-      Alert.alert('Invalid date', 'Enter maturity date as YYYY-MM-DD.');
+      setAlertInfo({ title: 'Invalid date', message: 'Enter maturity date as YYYY-MM-DD.' });
       return;
     }
 
@@ -206,14 +223,19 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
       onSuccess();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'Failed to add investment.');
+      setAlertInfo({ title: 'Error', message: err.message ?? 'Failed to add investment.' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+    >
       {/* Type chips */}
       <View style={styles.field}>
         <Text style={styles.label}>Type</Text>
@@ -357,8 +379,15 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
           : <Text style={styles.submitText}>Add Investment</Text>
         }
       </TouchableOpacity>
-      <View style={{ height: 32 }} />
     </ScrollView>
+
+    <AppAlert
+      visible={alertInfo !== null}
+      title={alertInfo?.title ?? ''}
+      message={alertInfo?.message ?? ''}
+      onClose={() => setAlertInfo(null)}
+    />
+    </>
   );
 }
 

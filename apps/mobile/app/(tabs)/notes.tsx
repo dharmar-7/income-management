@@ -6,12 +6,13 @@ import {
   StyleSheet, Modal, KeyboardAvoidingView, Platform, Pressable,
   Image, ActivityIndicator, RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import Markdown from 'react-native-markdown-display';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import { apiFetch } from '@/lib/api';
+import AppAlert from '@/components/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,28 +80,7 @@ async function cancelLocalNotification(noteId: string) {
   await Notifications.cancelScheduledNotificationAsync(noteId).catch(() => {});
 }
 
-// ─── Modern in-app alert (replaces system Alert.alert) ─────────────────────────
-
-function AppAlert({
-  visible, title, message, onClose,
-}: { visible: boolean; title: string; message: string; onClose: () => void }) {
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={appAlertStyles.overlay} onPress={onClose}>
-        <View style={appAlertStyles.box}>
-          <View style={appAlertStyles.iconWrap}>
-            <Text style={{ fontSize: 28 }}>⚠️</Text>
-          </View>
-          <Text style={appAlertStyles.title}>{title}</Text>
-          <Text style={appAlertStyles.msg}>{message}</Text>
-          <TouchableOpacity style={appAlertStyles.btn} onPress={onClose}>
-            <Text style={appAlertStyles.btnText}>OK</Text>
-          </TouchableOpacity>
-        </View>
-      </Pressable>
-    </Modal>
-  );
-}
+// AppAlert (the modern in-app alert) is shared from components/AppAlert.
 
 // ─── Date/Time picker (spinner-style, no extra packages) ────────────────────────
 
@@ -318,6 +298,7 @@ function NoteSheet({
   onLockToggle?: () => void;
 }) {
   const { getToken } = useAuth();
+  const insets = useSafeAreaInsets();
   const [title,    setTitle]   = useState('');
   const [content,  setContent] = useState('');
   const [color,    setColor]   = useState('white');
@@ -509,7 +490,11 @@ function NoteSheet({
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+            >
               {/* Content */}
               {preview ? (
                 <View style={styles.previewContainer}>
@@ -684,7 +669,6 @@ function NoteSheet({
                 </TouchableOpacity>
               </View>
 
-              <View style={{ height: 32 }} />
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -1134,45 +1118,6 @@ const passStyles = StyleSheet.create({
   cancelText: { color: '#6b7280', fontWeight: '600', fontSize: 14 },
   confirmBtn: { flex: 1, backgroundColor: '#111827', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   confirmText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-});
-
-// ─── AppAlert styles ─────────────────────────────────────────────────────────────
-
-const appAlertStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  box: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 28,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 18,
-  },
-  iconWrap: {
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: '#fef2f2',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 16,
-  },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8, textAlign: 'center' },
-  msg: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 21, marginBottom: 24 },
-  btn: {
-    backgroundColor: '#6366f1',
-    borderRadius: 14,
-    paddingHorizontal: 36,
-    paddingVertical: 14,
-    minWidth: 120,
-    alignItems: 'center',
-  },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
 
 // ─── DateTimePicker styles ────────────────────────────────────────────────────────

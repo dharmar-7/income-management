@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import {
   Modal, View, Text, TouchableOpacity, Pressable, StyleSheet,
+  Animated, useColorScheme,
 } from 'react-native';
 
 interface AppAlertProps {
@@ -19,87 +21,108 @@ export default function AppAlert({
   confirmLabel, confirmDestructive,
   onClose, onConfirm,
 }: AppAlertProps) {
+  const dark = useColorScheme() === 'dark';
+  const scale = useRef(new Animated.Value(0.9)).current;
+  const fade = useRef(new Animated.Value(0)).current;
+
+  // Spring scale-in when the alert appears — feels far more alive than a flat fade.
+  useEffect(() => {
+    if (visible) {
+      scale.setValue(0.9);
+      fade.setValue(0);
+      Animated.parallel([
+        Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 7, tension: 90 }),
+        Animated.timing(fade, { toValue: 1, duration: 150, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible]);
+
   const isConfirm = !!confirmLabel;
+  const accent = confirmDestructive ? '#ef4444' : isConfirm ? '#6366f1' : '#f59e0b';
   const defaultIcon = confirmDestructive ? '🗑️' : isConfirm ? '❓' : '⚠️';
-  const iconBg = confirmDestructive ? '#fef2f2' : isConfirm ? '#f0f9ff' : '#fff7ed';
+  const C = dark ? darkColors : lightColors;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent animationType="fade" onRequestClose={onClose}>
       <Pressable style={s.overlay} onPress={isConfirm ? undefined : onClose}>
-        <Pressable style={s.box}>
-          <View style={[s.iconWrap, { backgroundColor: iconBg }]}>
-            <Text style={s.iconText}>{icon ?? defaultIcon}</Text>
-          </View>
-
-          <Text style={s.title}>{title}</Text>
-          <Text style={s.message}>{message}</Text>
-
-          {isConfirm ? (
-            <View style={s.btnRow}>
-              <TouchableOpacity style={s.cancelBtn} onPress={onClose}>
-                <Text style={s.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.confirmBtn, confirmDestructive ? s.destructiveBtn : s.primaryBtn]}
-                onPress={() => { onClose(); onConfirm?.(); }}
-              >
-                <Text style={s.confirmText}>{confirmLabel}</Text>
-              </TouchableOpacity>
+        <Animated.View style={[s.cardWrap, { opacity: fade, transform: [{ scale }] }]}>
+          <Pressable style={[s.box, { backgroundColor: C.bg }]} onPress={() => {}}>
+            <View style={[s.iconRing, { backgroundColor: accent + '14', borderColor: accent + '40' }]}>
+              <Text style={s.iconText}>{icon ?? defaultIcon}</Text>
             </View>
-          ) : (
-            <TouchableOpacity style={[s.confirmBtn, s.primaryBtn, { width: '100%' }]} onPress={onClose}>
-              <Text style={s.confirmText}>OK</Text>
-            </TouchableOpacity>
-          )}
-        </Pressable>
+
+            <Text style={[s.title, { color: C.title }]}>{title}</Text>
+            <Text style={[s.message, { color: C.msg }]}>{message}</Text>
+
+            {isConfirm ? (
+              <View style={s.btnRow}>
+                <TouchableOpacity
+                  style={[s.btn, s.cancelBtn, { borderColor: C.border }]}
+                  onPress={onClose}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[s.cancelText, { color: C.msg }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.btn, { backgroundColor: accent }]}
+                  onPress={() => { onClose(); onConfirm?.(); }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={s.confirmText}>{confirmLabel}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[s.btn, { backgroundColor: accent, width: '100%' }]}
+                onPress={onClose}
+                activeOpacity={0.85}
+              >
+                <Text style={s.confirmText}>OK</Text>
+              </TouchableOpacity>
+            )}
+          </Pressable>
+        </Animated.View>
       </Pressable>
     </Modal>
   );
 }
 
+const lightColors = { bg: '#ffffff', title: '#0f172a', msg: '#64748b', border: '#e5e7eb' };
+const darkColors  = { bg: '#1c1c2e', title: '#f1f5f9', msg: '#94a3b8', border: 'rgba(255,255,255,0.14)' };
+
 const s = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(15,15,30,0.6)',
     justifyContent: 'center',
-    padding: 32,
-  },
-  box: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
+    alignItems: 'center',
     padding: 28,
+  },
+  cardWrap: { width: '100%', maxWidth: 380, alignItems: 'center' },
+  box: {
+    width: '100%',
+    borderRadius: 28,
+    padding: 26,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 18,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.28,
+    shadowRadius: 30,
+    elevation: 24,
   },
-  iconWrap: {
-    width: 60, height: 60, borderRadius: 30,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 16,
+  iconRing: {
+    width: 64, height: 64, borderRadius: 32, borderWidth: 1.5,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 18,
   },
-  iconText: { fontSize: 28 },
+  iconText: { fontSize: 30 },
   title: {
-    fontSize: 18, fontWeight: '700', color: '#111827',
-    marginBottom: 8, textAlign: 'center',
+    fontSize: 19, fontWeight: '800', marginBottom: 8,
+    textAlign: 'center', letterSpacing: -0.3,
   },
-  message: {
-    fontSize: 14, color: '#6b7280',
-    textAlign: 'center', lineHeight: 21,
-    marginBottom: 24,
-  },
+  message: { fontSize: 14.5, textAlign: 'center', lineHeight: 21, marginBottom: 24 },
   btnRow: { flexDirection: 'row', gap: 10, width: '100%' },
-  cancelBtn: {
-    flex: 1, paddingVertical: 14, borderRadius: 14,
-    borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center',
-  },
-  cancelText: { color: '#6b7280', fontWeight: '600', fontSize: 14 },
-  confirmBtn: {
-    flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
-  },
-  primaryBtn: { backgroundColor: '#6366f1' },
-  destructiveBtn: { backgroundColor: '#ef4444' },
-  confirmText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  btn: { flex: 1, paddingVertical: 15, borderRadius: 16, alignItems: 'center' },
+  cancelBtn: { borderWidth: 1.5, backgroundColor: 'transparent' },
+  cancelText: { fontWeight: '700', fontSize: 15 },
+  confirmText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });

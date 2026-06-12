@@ -10,10 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
+import AppAlert from '@/components/AppAlert';
 
 type SheetMode = 'add' | 'spend';
 
@@ -48,6 +49,8 @@ function formatINR(n: number) {
 
 export default function CashSheet({ visible, mode, currentBalance, onClose, onSuccess }: Props) {
   const { getToken } = useAuth();
+  const insets = useSafeAreaInsets();
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
 
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState(mode === 'add' ? 'ATM' : 'SPENT');
@@ -72,15 +75,15 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
   async function handleSubmit() {
     const parsed = parseFloat(amount);
     if (!amount || isNaN(parsed) || parsed <= 0) {
-      Alert.alert('Invalid amount', 'Please enter a valid amount.');
+      setAlertInfo({ title: 'Invalid amount', message: 'Please enter a valid amount.' });
       return;
     }
     if (mode === 'spend' && parsed > currentBalance) {
-      Alert.alert('Insufficient cash', `You only have ${formatINR(currentBalance)} in hand.`);
+      setAlertInfo({ title: 'Insufficient cash', message: `You only have ${formatINR(currentBalance)} in hand.` });
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      Alert.alert('Invalid date', 'Enter date as YYYY-MM-DD.');
+      setAlertInfo({ title: 'Invalid date', message: 'Enter date as YYYY-MM-DD.' });
       return;
     }
 
@@ -101,13 +104,14 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
       onSuccess();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'Failed to save.');
+      setAlertInfo({ title: 'Error', message: err.message ?? 'Failed to save.' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
+    <>
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
 
@@ -135,7 +139,11 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
             </View>
           )}
 
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+          >
             {/* Source chips */}
             <Text style={styles.label}>Source</Text>
             <View style={styles.chipRow}>
@@ -199,11 +207,18 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
               }
             </TouchableOpacity>
 
-            <View style={{ height: 32 }} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
+
+    <AppAlert
+      visible={alertInfo !== null}
+      title={alertInfo?.title ?? ''}
+      message={alertInfo?.message ?? ''}
+      onClose={() => setAlertInfo(null)}
+    />
+    </>
   );
 }
 
