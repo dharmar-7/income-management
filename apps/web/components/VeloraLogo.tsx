@@ -41,38 +41,38 @@ export default function VeloraLogo({
   );
 }
 
-// ── Faceted Crystal (primary — nav, splash, sign-in) ─────────────────────────
-// Regular hexagon, pointed-top, 6 triangular facets from center.
-// Vertices: (24,4) (41.3,14) (41.3,34) (24,44) (6.7,34) (6.7,14), center (24,24)
+// ── Spectrum color wheel (primary — nav, splash, sign-in) ────────────────────
+// 12 rainbow wedges around a white hub. Matches the app icon (logo-wheel.png).
 export function CrystalIcon({ size = 28 }: { size?: number }) {
+  const cx = 24, cy = 24, r = 22, n = 12;
+  const wedges = Array.from({ length: n }, (_, i) => {
+    const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+    const x0 = (cx + r * Math.cos(a0)).toFixed(2);
+    const y0 = (cy + r * Math.sin(a0)).toFixed(2);
+    const x1 = (cx + r * Math.cos(a1)).toFixed(2);
+    const y1 = (cy + r * Math.sin(a1)).toFixed(2);
+    return (
+      <path
+        key={i}
+        d={`M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`}
+        fill={`hsl(${Math.round((i / n) * 360)} 85% 56%)`}
+        stroke="#ffffff"
+        strokeWidth="0.9"
+        strokeLinejoin="round"
+      />
+    );
+  });
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 48 48"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="Velora"
     >
-      <polygon points="24,24 24,4 41.3,14"    fill="#f72585" />
-      <polygon points="24,24 41.3,14 41.3,34" fill="#ff9100" />
-      <polygon points="24,24 41.3,34 24,44"   fill="#ffd60a" />
-      <polygon points="24,24 24,44 6.7,34"    fill="#32d74b" />
-      <polygon points="24,24 6.7,34 6.7,14"   fill="#0a84ff" />
-      <polygon points="24,24 6.7,14 24,4"     fill="#bf5af2" />
-      {/* facet edges */}
-      <polygon
-        points="24,4 41.3,14 41.3,34 24,44 6.7,34 6.7,14"
-        fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.8"
-      />
-      <line x1="24"   y1="4"  x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
-      <line x1="41.3" y1="14" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
-      <line x1="41.3" y1="34" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
-      <line x1="24"   y1="44" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
-      <line x1="6.7"  y1="34" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
-      <line x1="6.7"  y1="14" x2="24"   y2="24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.6" />
-      {/* specular highlight top-right facet */}
-      <ellipse cx="29" cy="11" rx="5" ry="3" fill="rgba(255,255,255,0.24)" transform="rotate(-25,29,11)" />
+      {wedges}
+      <circle cx={cx} cy={cy} r={r * 0.22} fill="#ffffff" />
     </svg>
   );
 }
