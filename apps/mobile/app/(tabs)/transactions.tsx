@@ -125,7 +125,7 @@ export default function TransactionsScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <AddTransactionSheet
         visible={showSheet}
         categories={categories ?? []}

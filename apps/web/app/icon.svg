@@ -1,15 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <style>
-    .a1 { stroke: #e11d48; }
-    .a2 { stroke: #4f46e5; }
-    .a3 { stroke: #15803d; }
-    @media (prefers-color-scheme: dark) {
-      .a1 { stroke: #ff2d55; }
-      .a2 { stroke: #5e5ce6; }
-      .a3 { stroke: #32d74b; }
-    }
-  </style>
-  <path class="a1" d="M 18,36 L 24,28 L 30,36" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path class="a2" d="M 10,40 L 24,18 L 38,40" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path class="a3" d="M 3,43 L 24,10 L 45,43"  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="lf" x1="0" y1="1" x2="0.45" y2="0">
+      <stop offset="0" stop-color="#166534"/><stop offset="1" stop-color="#86efac"/>
+    </linearGradient>
+    <radialGradient id="seed" cx="0.38" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#cbd5e1"/><stop offset="1" stop-color="#64748b"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(0 -31)">
+    <g transform="translate(100 156) rotate(-27) scale(1.7)">
+      <path d="M0 0 C -18 -10,-26 -34,-16 -52 C 4 -42,12 -18,0 0 Z" fill="url(#lf)"/>
+      <path d="M0 -2 C -8 -16,-14 -32,-15 -46" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+    </g>
+    <g transform="translate(100 156) rotate(27) scale(1.7)">
+      <path d="M0 0 C -18 -10,-26 -34,-16 -52 C 4 -42,12 -18,0 0 Z" fill="url(#lf)"/>
+      <path d="M0 -2 C -8 -16,-14 -32,-15 -46" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+    </g>
+    <circle cx="100" cy="168" r="13" fill="url(#seed)"/>
+    <circle cx="100" cy="168" r="13" fill="none" stroke="#64748b" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="100" y="169" font-family="sans-serif" font-size="13" font-weight="800" fill="#334155" text-anchor="middle" dominant-baseline="central">₹</text>
+  </g>
 </svg>

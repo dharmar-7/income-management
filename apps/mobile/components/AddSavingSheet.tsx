@@ -7,13 +7,12 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -393,6 +392,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
 
 export default function AddSavingSheet({ visible, mode, platforms, onClose, onSuccess }: Props) {
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   return (
     <Modal
       visible={visible}
@@ -402,11 +402,13 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
     >
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.sheetWrapper}
-      >
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={[styles.sheetWrapper, { bottom: keyboardHeight }]}>
+        <View
+          style={[
+            styles.sheet,
+            { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+          ]}
+        >
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.title}>
@@ -422,7 +424,7 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
             : <AddSavingForm platforms={platforms} onClose={onClose} onSuccess={onSuccess} />
           }
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

@@ -1,11 +1,10 @@
 // Generates the Velora brand assets: app icon, Android adaptive icon, splash,
 // and a transparent in-app logo (logo-wheel.png used by the header + tab bar).
 //
-// Brand mark: a FACETED GEM HEXAGON — a pointy-top hexagon cut into crown and
-// table facets in a violet brand gradient, with a couple of bright accent facets
-// for sparkle. Reads as a premium "gem", not game-like, fits a finance app.
-//
-// (The in-app file is still named logo-wheel.png so existing imports keep working.)
+// Brand mark (chosen 2026-06-14): "V from two leaves + seed coin" — two green
+// leaves form a V, sprouting from a small silver ₹ seed-coin. Growth + savings,
+// with an Indian-rupee cue. (The in-app file keeps the name logo-wheel.png so
+// existing imports don't change.)
 //
 // Run:  npm i -D sharp   (one-off build tool, not an app dependency)
 //       node scripts/generate-icons.mjs
@@ -16,123 +15,67 @@ import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ASSETS = join(__dirname, '..', 'assets');
+const FONT = '-apple-system,Segoe UI,Roboto,sans-serif';
 
-const r2 = (n) => Math.round(n * 1000) / 1000;
-
-function hsl(h, s, l) {
-  s /= 100; l /= 100;
-  const k = (n) => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  const toHex = (x) => Math.round(255 * x).toString(16).padStart(2, '0');
-  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+// ── shared mark pieces ───────────────────────────────────────────────────────
+function milledRing(cx, cy, rO, rI, n, color, op) {
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * 2 * Math.PI;
+    s += `<line x1="${(cx + rO * Math.cos(a)).toFixed(1)}" y1="${(cy + rO * Math.sin(a)).toFixed(1)}" x2="${(cx + rI * Math.cos(a)).toFixed(1)}" y2="${(cy + rI * Math.sin(a)).toFixed(1)}" stroke="${color}" stroke-width="2" stroke-opacity="${op}"/>`;
+  }
+  return s;
+}
+function leaf(cx, cy, rot, scale, gid) {
+  return `<g transform="translate(${cx} ${cy}) rotate(${rot}) scale(${scale})">
+    <path d="M0 0 C -18 -10,-26 -34,-16 -52 C 4 -42,12 -18,0 0 Z" fill="url(#${gid})"/>
+    <path d="M0 -2 C -8 -16,-14 -32,-15 -46" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+  </g>`;
 }
 
-// Two bright accent facets (a magenta and a cyan) to give the gem some spectrum
-// sparkle without turning it into a rainbow. Keyed by table-facet index.
-const ACCENTS = { 1: '#ec4899', 4: '#22d3ee' };
-
-/** SVG group for the faceted gem hexagon, centred in an SxS box. */
-function gemGroup(S, frac) {
-  const cx = S / 2, cy = S / 2;
-  const R = (frac * S) / 2;     // outer hexagon radius
-  const r = R * 0.52;           // inner hexagon (table) radius
-  const stroke = r2(R * 0.016);
-  const N = 6;
-  // Pointy-top hexagon: a vertex sits at the very top (-90°).
-  const ang = (i) => (Math.PI / 180) * (60 * i - 90);
-  const V = [], W = [];
-  for (let i = 0; i < N; i++) {
-    V.push([r2(cx + R * Math.cos(ang(i))), r2(cy + R * Math.sin(ang(i)))]);
-    W.push([r2(cx + r * Math.cos(ang(i))), r2(cy + r * Math.sin(ang(i)))]);
-  }
-
-  const facets = [];
-
-  // Crown facets: 6 trapezoids between the outer and inner hexagons. Lit from the
-  // top — higher facets are lighter, lower ones darker, for a cut-gem gradient.
-  for (let i = 0; i < N; i++) {
-    const j = (i + 1) % N;
-    const yc = (V[i][1] + V[j][1] + W[j][1] + W[i][1]) / 4;
-    const norm = (yc - cy) / R;                 // -1 (top) .. 1 (bottom)
-    const fill = hsl(264, 68, 53 - norm * 17);
-    facets.push(
-      `<path d="M ${V[i][0]} ${V[i][1]} L ${V[j][0]} ${V[j][1]} L ${W[j][0]} ${W[j][1]} L ${W[i][0]} ${W[i][1]} Z" ` +
-      `fill="${fill}" stroke="#ffffff" stroke-opacity="0.35" stroke-width="${stroke}" stroke-linejoin="round"/>`,
-    );
-  }
-
-  // Table facets: the inner hexagon split into 6 triangles from the centre.
-  for (let i = 0; i < N; i++) {
-    const j = (i + 1) % N;
-    const yc = (cy + W[i][1] + W[j][1]) / 3;
-    const norm = (yc - cy) / r;
-    const fill = ACCENTS[i] ?? hsl(262, 60, 62 - norm * 13);
-    facets.push(
-      `<path d="M ${r2(cx)} ${r2(cy)} L ${W[i][0]} ${W[i][1]} L ${W[j][0]} ${W[j][1]} Z" ` +
-      `fill="${fill}" stroke="#ffffff" stroke-opacity="0.4" stroke-width="${stroke}" stroke-linejoin="round"/>`,
-    );
-  }
-
-  return `
-    <g filter="url(#gemShadow)">
-      ${facets.join('\n      ')}
-      <!-- overall top-left sheen across the whole gem -->
-      <polygon points="${V.map((p) => `${p[0]},${p[1]}`).join(' ')}" fill="url(#gloss)"/>
-      <!-- bright centre sparkle -->
-      <circle cx="${r2(cx)}" cy="${r2(cy)}" r="${r2(r * 0.22)}" fill="url(#hubGloss)"/>
-    </g>`;
+// The mark, authored in a 200×200 space, then re-centred so its visual middle
+// sits at (100,100) for clean placement in any canvas.
+function leafMark(u, withShadow) {
+  return `<defs>
+    <linearGradient id="lf${u}" x1="0" y1="1" x2="0.45" y2="0"><stop offset="0" stop-color="#166534"/><stop offset="1" stop-color="#86efac"/></linearGradient>
+    <radialGradient id="seed${u}" cx="0.38" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#cbd5e1"/><stop offset="1" stop-color="#64748b"/></radialGradient>
+    <filter id="sh${u}" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+  </defs>
+  <g transform="translate(0 -31)">
+    ${withShadow ? `<ellipse cx="100" cy="184" rx="40" ry="8" fill="#1e1b4b" opacity="0.16" filter="url(#sh${u})"/>` : ''}
+    ${leaf(100, 156, -27, 1.7, 'lf' + u)} ${leaf(100, 156, 27, 1.7, 'lf' + u)}
+    <circle cx="100" cy="168" r="13" fill="url(#seed${u})"/>${milledRing(100, 168, 13, 9.5, 28, '#64748b', 0.6)}
+    <text x="100" y="169" font-family="${FONT}" font-size="13" font-weight="800" fill="#334155" text-anchor="middle" dominant-baseline="central">₹</text>
+  </g>`;
 }
 
-const DEFS = `
-  <defs>
-    <radialGradient id="gloss" cx="0.42" cy="0.3" r="0.7">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
-      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.08"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="hubGloss" cx="0.4" cy="0.34" r="0.75">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="1" stop-color="#ede9fe" stop-opacity="0.55"/>
-    </radialGradient>
-    <linearGradient id="iconBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#f1edff"/>
-    </linearGradient>
-    <filter id="gemShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="0" stdDeviation="__BLUR__" flood-color="#3b1d6e" flood-opacity="0.2"/>
-    </filter>
-  </defs>`;
-
-// feDropShadow stdDeviation can't be a function — patch DEFS per call instead.
-function defsFor(S) {
-  return DEFS.replace('__BLUR__', `${Math.round(S * 0.02)}`);
+// scale `s` about the canvas centre (100,100)
+function placed(s, body) {
+  const a = (100 * (1 - s)).toFixed(3);
+  return `<g transform="translate(${a} ${a}) scale(${s})">${body}</g>`;
 }
 
-function iconSVG(S, frac) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  ${defsFor(S)}
-  <rect width="${S}" height="${S}" fill="url(#iconBg)"/>
-  ${gemGroup(S, frac)}
+function iconSVG(S, s, withShadow) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 200 200">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ede9fe"/></linearGradient></defs>
+  <rect width="200" height="200" fill="url(#bg)"/>
+  ${placed(s, leafMark('a', withShadow))}
 </svg>`;
 }
 
-function transparentGemSVG(S, frac) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">
-  ${defsFor(S)}
-  ${gemGroup(S, frac)}
+function transparentSVG(S, s) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}" viewBox="0 0 200 200">
+  ${placed(s, leafMark('t', false))}
 </svg>`;
 }
 
 function splashSVG(W, H) {
-  const box = Math.min(W, H);
-  const gem = gemGroup(W, 0.34); // frac relative to W width
+  const k = (Math.min(W, H) * 0.46) / 200;
+  const tx = (W / 2 - 100 * k).toFixed(2);
+  const ty = (H / 2 - 100 * k).toFixed(2);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  ${defsFor(box)}
   <rect width="${W}" height="${H}" fill="#f5f3ff"/>
-  <g transform="translate(0, ${r2(H / 2 - W / 2)})">
-    ${gem}
-  </g>
+  <g transform="translate(${tx} ${ty}) scale(${k})">${leafMark('s', true)}</g>
 </svg>`;
 }
 
@@ -141,9 +84,9 @@ async function render(svg, w, h, outName) {
   console.log(`✓ ${outName}  (${w}×${h})`);
 }
 
-await render(iconSVG(1024, 0.74), 1024, 1024, 'icon.png');
-await render(iconSVG(1024, 0.62), 1024, 1024, 'adaptive-icon.png');   // smaller for Android safe zone
+await render(iconSVG(1024, 0.86, true), 1024, 1024, 'icon.png');
+await render(iconSVG(1024, 0.70, false), 1024, 1024, 'adaptive-icon.png');  // smaller for Android safe zone
 await render(splashSVG(1284, 2778), 1284, 2778, 'splash.png');
-await render(transparentGemSVG(512, 0.92), 512, 512, 'logo-wheel.png'); // transparent, in-app
+await render(transparentSVG(512, 1.06), 512, 512, 'logo-wheel.png');         // transparent, in-app
 
 console.log('\nDone. Rebuild the app to see the new icon (icons are baked into the native build).');

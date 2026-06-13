@@ -164,7 +164,7 @@ export default function DashboardScreen() {
   const cashBalance = cashQuery.data?.balance ?? 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       {cashMode && (
         <CashSheet
           visible

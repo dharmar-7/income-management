@@ -171,7 +171,7 @@ export default function SavingsScreen() {
   const isGain = (sum?.totalGainLoss ?? 0) >= 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       {sheetMode && (
         <AddSavingSheet
           visible

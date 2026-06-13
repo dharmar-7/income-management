@@ -43,7 +43,10 @@ export default function AppAlert({
   }, [visible]);
 
   const isConfirm = !!confirmLabel;
+  // Icon-ring tint stays semantic (amber warn / red destructive / indigo question).
   const accent = confirmDestructive ? '#ef4444' : isConfirm ? '#6366f1' : '#f59e0b';
+  // Primary button uses the brand violet from the logo (red for destructive).
+  const buttonColor = confirmDestructive ? '#ef4444' : '#7c3aed';
   const defaultIcon = confirmDestructive ? '🗑️' : isConfirm ? '❓' : '⚠️';
   const C = dark ? darkColors : lightColors;
 
@@ -73,7 +76,7 @@ export default function AppAlert({
                 </TouchableOpacity>
               )}
               <TouchableOpacity
-                style={[s.btn, s.flex1, { backgroundColor: accent }]}
+                style={[s.btn, s.flex1, { backgroundColor: buttonColor }]}
                 onPress={() => { onClose(); if (isConfirm) onConfirm?.(); }}
                 activeOpacity={0.85}
               >

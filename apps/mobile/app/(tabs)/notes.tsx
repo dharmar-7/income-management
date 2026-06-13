@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, Modal, KeyboardAvoidingView, Platform, Pressable,
+  StyleSheet, Modal, Platform, Pressable,
   Image, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { BlurView } from 'expo-blur';
 import Markdown from 'react-native-markdown-display';
 import * as ImagePicker from 'expo-image-picker';
@@ -209,6 +210,7 @@ function PasswordModal({
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ title: string; msg: string } | null>(null);
+  const keyboardHeight = useKeyboardHeight();
 
   useEffect(() => {
     if (visible) setPassword('');
@@ -235,8 +237,8 @@ function PasswordModal({
   return (
     <>
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-        <View style={passStyles.overlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={[passStyles.overlay, keyboardHeight > 0 ? { paddingBottom: keyboardHeight } : null]}>
+          <View>
             <View style={passStyles.box}>
               <Text style={passStyles.title}>{title}</Text>
               {mode === 'enter' && (
@@ -271,7 +273,7 @@ function PasswordModal({
                 </TouchableOpacity>
               </View>
             </View>
-          </KeyboardAvoidingView>
+          </View>
         </View>
       </Modal>
       <AppAlert
@@ -299,6 +301,7 @@ function NoteSheet({
 }) {
   const { getToken } = useAuth();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const [title,    setTitle]   = useState('');
   const [content,  setContent] = useState('');
   const [color,    setColor]   = useState('white');
@@ -449,14 +452,11 @@ function NoteSheet({
     <>
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.sheetWrapper}
-        >
+        <View style={[styles.sheetWrapper, { bottom: keyboardHeight }]}>
           <View
             style={[
               styles.sheet,
-              { paddingBottom: Math.max(insets.bottom, 16) },
+              { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
               isMirrorSheet
                 ? {
                     backgroundColor: 'transparent',
@@ -672,7 +672,7 @@ function NoteSheet({
 
             </ScrollView>
           </View>
-        </KeyboardAvoidingView>
+        </View>
 
         <PasswordModal
           visible={lockModal !== null}
@@ -850,7 +850,7 @@ export default function NotesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <View style={styles.bgBlob1} />
         <View style={styles.bgBlob2} />

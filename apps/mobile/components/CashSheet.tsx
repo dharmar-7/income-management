@@ -7,13 +7,12 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
 
 type SheetMode = 'add' | 'spend';
@@ -50,6 +49,7 @@ function formatINR(n: number) {
 export default function CashSheet({ visible, mode, currentBalance, onClose, onSuccess }: Props) {
   const { getToken } = useAuth();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
 
   const [amount, setAmount] = useState('');
@@ -115,11 +115,13 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.wrapper}
-      >
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={[styles.wrapper, { bottom: keyboardHeight }]}>
+        <View
+          style={[
+            styles.sheet,
+            { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+          ]}
+        >
           <View style={styles.handle} />
 
           <View style={styles.header}>
@@ -209,7 +211,7 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
 
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
 
     <AppAlert

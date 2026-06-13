@@ -60,3 +60,7 @@ Thumbs.db
 
 .vercel
 .env*.local
+
+# Logo design scratch (local only)
+/logo-concepts.html
+apps/mobile/scripts/build-logo-gallery.mjs

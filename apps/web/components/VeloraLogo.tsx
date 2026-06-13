@@ -1,5 +1,5 @@
-// Primary logo: Faceted Crystal hexagon (Full Spectrum Rainbow)
-// Secondary export: ArcsIcon (Signal Arcs — Electric Trifecta) used for favicon / tiny sizes
+// Primary logo: "V from two leaves + silver ₹ seed coin" — matches the mobile app icon.
+// Secondary export: ArcsIcon (Signal Arcs) — kept for legacy / tiny uses.
 
 interface VeloraLogoProps {
   size?: number;
@@ -41,38 +41,35 @@ export default function VeloraLogo({
   );
 }
 
-// ── Spectrum color wheel (primary — nav, splash, sign-in) ────────────────────
-// 12 rainbow wedges around a white hub. Matches the app icon (logo-wheel.png).
+// ── V from two leaves + silver ₹ seed coin (primary — nav, splash, sign-in) ──
+// Matches the mobile app icon (logo-wheel.png). Authored in a 200×200 space.
 export function CrystalIcon({ size = 28 }: { size?: number }) {
-  const cx = 24, cy = 24, r = 22, n = 12;
-  const wedges = Array.from({ length: n }, (_, i) => {
-    const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
-    const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
-    const x0 = (cx + r * Math.cos(a0)).toFixed(2);
-    const y0 = (cy + r * Math.sin(a0)).toFixed(2);
-    const x1 = (cx + r * Math.cos(a1)).toFixed(2);
-    const y1 = (cy + r * Math.sin(a1)).toFixed(2);
-    return (
-      <path
-        key={i}
-        d={`M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`}
-        fill={`hsl(${Math.round((i / n) * 360)} 85% 56%)`}
-        stroke="#ffffff"
-        strokeWidth="0.9"
-        strokeLinejoin="round"
-      />
-    );
-  });
+  const lf = 'veloraLeaf', seed = 'veloraSeed';
+  const leafPath = 'M0 0 C -18 -10,-26 -34,-16 -52 C 4 -42,12 -18,0 0 Z';
+  const veinPath = 'M0 -2 C -8 -16,-14 -32,-15 -46';
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 48 48"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="Velora"
-    >
-      {wedges}
-      <circle cx={cx} cy={cy} r={r * 0.22} fill="#ffffff" />
+    <svg width={size} height={size} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-label="Velora">
+      <defs>
+        <linearGradient id={lf} x1="0" y1="1" x2="0.45" y2="0">
+          <stop offset="0" stopColor="#166534" /><stop offset="1" stopColor="#86efac" />
+        </linearGradient>
+        <radialGradient id={seed} cx="0.38" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#ffffff" /><stop offset="0.5" stopColor="#cbd5e1" /><stop offset="1" stopColor="#64748b" />
+        </radialGradient>
+      </defs>
+      <g transform="translate(0 -31)">
+        <g transform="translate(100 156) rotate(-27) scale(1.7)">
+          <path d={leafPath} fill={`url(#${lf})`} />
+          <path d={veinPath} fill="none" stroke="#ffffff" strokeOpacity="0.5" strokeWidth="2" />
+        </g>
+        <g transform="translate(100 156) rotate(27) scale(1.7)">
+          <path d={leafPath} fill={`url(#${lf})`} />
+          <path d={veinPath} fill="none" stroke="#ffffff" strokeOpacity="0.5" strokeWidth="2" />
+        </g>
+        <circle cx="100" cy="168" r="13" fill={`url(#${seed})`} />
+        <circle cx="100" cy="168" r="13" fill="none" stroke="#64748b" strokeOpacity="0.5" strokeWidth="1.5" />
+        <text x="100" y="169" fontSize="13" fontWeight="800" fill="#334155" textAnchor="middle" dominantBaseline="central">₹</text>
+      </g>
     </svg>
   );
 }

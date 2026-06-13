@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 
 const queryClient = new QueryClient({
@@ -47,14 +48,20 @@ function AuthGuard() {
 
 export default function RootLayout() {
   return (
-    <ClerkProvider
-      publishableKey={publishableKey}
-      tokenCache={Platform.OS === 'web' ? undefined : tokenCache}
-    >
-      <QueryClientProvider client={queryClient}>
-        <AuthGuard />
-        <Slot />
-      </QueryClientProvider>
-    </ClerkProvider>
+    // SafeAreaProvider is REQUIRED: on Expo SDK 54 Android is edge-to-edge, so the
+    // app draws under the gesture nav bar. Without this provider every
+    // useSafeAreaInsets() returns zeros and bottom content (sheet buttons, tab bar)
+    // gets clipped by the nav bar.
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <ClerkProvider
+        publishableKey={publishableKey}
+        tokenCache={Platform.OS === 'web' ? undefined : tokenCache}
+      >
+        <QueryClientProvider client={queryClient}>
+          <AuthGuard />
+          <Slot />
+        </QueryClientProvider>
+      </ClerkProvider>
+    </SafeAreaProvider>
   );
 }

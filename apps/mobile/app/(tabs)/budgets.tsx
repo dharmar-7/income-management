@@ -10,12 +10,11 @@ import {
   Modal,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
 
 interface BudgetWithProgress {
@@ -69,6 +68,7 @@ function AddBudgetSheet({
 }) {
   const { getToken } = useAuth();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const now = new Date();
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
@@ -117,11 +117,13 @@ function AddBudgetSheet({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <TouchableOpacity style={sheet.backdrop} activeOpacity={1} onPress={handleClose} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={sheet.wrapper}
-      >
-        <View style={[sheet.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={[sheet.wrapper, { bottom: keyboardHeight }]}>
+        <View
+          style={[
+            sheet.container,
+            { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+          ]}
+        >
           <View style={sheet.handle} />
           <View style={sheet.header}>
             <Text style={sheet.title}>+ Set Monthly Budget</Text>
@@ -204,7 +206,7 @@ function AddBudgetSheet({
             <View style={{ height: 24 }} />
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
       <AppAlert
         visible={!!alertData}
         title={alertData?.title ?? ''}
@@ -248,7 +250,7 @@ export default function BudgetsScreen() {
   const onTrackCount = data?.data.filter(b => b.percentUsed < 80).length ?? 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <AddBudgetSheet
         visible={showAdd}
         categories={categories}
