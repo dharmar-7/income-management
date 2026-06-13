@@ -14,7 +14,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 import AppAlert from '@/components/AppAlert';
 
@@ -68,6 +68,7 @@ function AddBudgetSheet({
   onSuccess: () => void;
 }) {
   const { getToken } = useAuth();
+  const insets = useSafeAreaInsets();
   const now = new Date();
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
@@ -117,10 +118,10 @@ function AddBudgetSheet({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <TouchableOpacity style={sheet.backdrop} activeOpacity={1} onPress={handleClose} />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={sheet.wrapper}
       >
-        <View style={sheet.container}>
+        <View style={[sheet.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={sheet.handle} />
           <View style={sheet.header}>
             <Text style={sheet.title}>+ Set Monthly Budget</Text>
@@ -200,7 +201,7 @@ function AddBudgetSheet({
                 : <Text style={sheet.submitText}>Save Budget</Text>
               }
             </TouchableOpacity>
-            <View style={{ height: 32 }} />
+            <View style={{ height: 24 }} />
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

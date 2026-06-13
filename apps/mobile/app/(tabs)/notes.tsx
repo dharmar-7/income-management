@@ -236,7 +236,7 @@ function PasswordModal({
     <>
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <View style={passStyles.overlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={passStyles.box}>
               <Text style={passStyles.title}>{title}</Text>
               {mode === 'enter' && (
@@ -450,12 +450,13 @@ function NoteSheet({
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.sheetWrapper}
         >
           <View
             style={[
               styles.sheet,
+              { paddingBottom: Math.max(insets.bottom, 16) },
               isMirrorSheet
                 ? {
                     backgroundColor: 'transparent',
@@ -493,7 +494,7 @@ function NoteSheet({
             <ScrollView
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+              contentContainerStyle={{ paddingBottom: 24 }}
             >
               {/* Content */}
               {preview ? (

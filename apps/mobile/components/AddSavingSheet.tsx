@@ -66,7 +66,6 @@ function formatINR(n: number) {
 
 function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { getToken } = useAuth();
-  const insets = useSafeAreaInsets();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
   const [name, setName] = useState('');
   const [totalAdded, setTotalAdded] = useState('');
@@ -108,7 +107,7 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
     <ScrollView
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+      contentContainerStyle={{ paddingBottom: 24 }}
     >
       <Text style={styles.hint}>
         A platform is your in-app wallet (e.g. Groww, Zerodha). Add the total amount you've transferred into it.
@@ -176,7 +175,6 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
 
 function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: InvestmentPlatform[]; onClose: () => void; onSuccess: () => void }) {
   const { getToken } = useAuth();
-  const insets = useSafeAreaInsets();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
   const [savingType, setSavingType] = useState<SavingType>('MUTUAL_FUNDS');
   const [name, setName] = useState('');
@@ -234,7 +232,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
     <ScrollView
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+      contentContainerStyle={{ paddingBottom: 24 }}
     >
       {/* Type chips */}
       <View style={styles.field}>
@@ -394,6 +392,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
 // ─── Sheet ──────────────────────────────────────────────────────────────────────
 
 export default function AddSavingSheet({ visible, mode, platforms, onClose, onSuccess }: Props) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal
       visible={visible}
@@ -404,10 +403,10 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.sheetWrapper}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.title}>

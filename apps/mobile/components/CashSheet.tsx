@@ -119,7 +119,7 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.wrapper}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handle} />
 
           <View style={styles.header}>
@@ -142,7 +142,7 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+            contentContainerStyle={{ paddingBottom: 24 }}
           >
             {/* Source chips */}
             <Text style={styles.label}>Source</Text>

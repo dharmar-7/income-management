@@ -118,7 +118,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.sheetWrapper}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           {/* Handle bar */}
           <View style={styles.handle} />
 
@@ -133,7 +133,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
+            contentContainerStyle={{ paddingBottom: 24 }}
           >
 
             {/* Type toggle */}

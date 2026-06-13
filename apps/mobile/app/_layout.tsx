@@ -2,8 +2,9 @@ import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@/lib/tokenCache';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import { apiFetch } from '@/lib/api';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 5 * 60_000, gcTime: 10 * 60_000 } },
@@ -12,9 +13,22 @@ const queryClient = new QueryClient({
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 function AuthGuard() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const synced = useRef(false);
+
+  // Create/sync our DB user as soon as we're signed in. Mobile must do this
+  // itself — previously ONLY the web app called POST /users/me, so signing in
+  // on mobile against a fresh database left no user row ("User not found" on
+  // every request). POST /users/me is an idempotent upsert, so it's safe here.
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || synced.current) return;
+    synced.current = true;
+    getToken().then((token) => {
+      if (token) apiFetch('/users/me', token, { method: 'POST' }).catch(() => {});
+    });
+  }, [isLoaded, isSignedIn, getToken]);
 
   useEffect(() => {
     if (!isLoaded) return;
