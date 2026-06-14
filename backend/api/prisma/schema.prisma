@@ -114,6 +114,10 @@ model Budget {
 
   // One budget per user per category per month
   @@unique([userId, categoryId, month, year])
+
+  // Hot path: getBudgetsWithProgress filters on (userId, month, year) without
+  // categoryId, so the @@unique prefix above can't serve it. This index does.
+  @@index([userId, month, year])
 }
 
 // ─────────────────────────────────────────

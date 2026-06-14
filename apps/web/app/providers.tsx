@@ -1,6 +1,6 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, keepPreviousData } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { useEffect, useRef, useState } from 'react';
 import { apiFetch } from '../lib/api';
@@ -29,8 +29,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 60 * 1000, // data is "fresh" for 1 minute before refetching
+        staleTime: 5 * 60 * 1000,  // data is "fresh" for 5 minutes before refetching
+        gcTime: 30 * 60 * 1000,    // keep cached data 30 min so navigation is instant
+        refetchOnWindowFocus: false, // don't refetch (and flash spinners) on tab focus
         retry: 1,
+        // Keep showing the previously loaded data while a refetch happens in the
+        // background (e.g. on a month/key change) instead of blanking to a spinner.
+        placeholderData: keepPreviousData,
       },
     },
   }));

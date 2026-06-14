@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
+import compression from 'compression';
 
 // Crash immediately if any required environment variable is missing.
 // Better to fail loudly at boot than to fail silently during a real request.
@@ -29,6 +30,10 @@ async function bootstrap() {
   // Helmet — sets ~15 secure HTTP response headers automatically.
   // e.g. X-Content-Type-Options: nosniff, X-Frame-Options: DENY, etc.
   app.use(helmet());
+
+  // gzip responses — big win for large JSON payloads (transaction lists,
+  // reports, and especially notes whose images are inlined as base64 data URLs).
+  app.use(compression());
 
   // CORS — only allow requests from our web and mobile apps
   app.enableCors({

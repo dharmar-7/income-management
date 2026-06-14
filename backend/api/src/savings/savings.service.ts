@@ -161,12 +161,19 @@ export class SavingsService {
 
   async getSummary(clerkId: string) {
     const userId = await this.resolveUserId(clerkId);
-    const savings = await this.prisma.saving.findMany({ where: { userId } });
 
-    const totalInvested = savings.reduce((s, sv) => s + sv.investedAmount, 0);
-    const totalCharges = savings.reduce((s, sv) => s + sv.charges, 0);
+    // Aggregate in the database instead of fetching every row and reducing in
+    // JS — one small round-trip regardless of how many investments exist.
+    const agg = await this.prisma.saving.aggregate({
+      where: { userId },
+      _sum: { investedAmount: true, charges: true, currentValue: true },
+      _count: true,
+    });
+
+    const totalInvested = agg._sum.investedAmount ?? 0;
+    const totalCharges = agg._sum.charges ?? 0;
     const totalNetCost = totalInvested + totalCharges;
-    const totalCurrentValue = savings.reduce((s, sv) => s + sv.currentValue, 0);
+    const totalCurrentValue = agg._sum.currentValue ?? 0;
     const totalGainLoss = totalCurrentValue - totalNetCost;
     const totalGainPercent = totalNetCost > 0 ? (totalGainLoss / totalNetCost) * 100 : 0;
 
@@ -177,7 +184,7 @@ export class SavingsService {
       totalCurrentValue,
       totalGainLoss,
       totalGainPercent,
-      count: savings.length,
+      count: agg._count,
     };
   }
 }

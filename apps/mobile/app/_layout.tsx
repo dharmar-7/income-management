@@ -1,6 +1,6 @@
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '@/lib/tokenCache';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, keepPreviousData } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
@@ -8,7 +8,17 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { apiFetch } from '@/lib/api';
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 5 * 60_000, gcTime: 10 * 60_000 } },
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,          // keep cached data 30 min so tab switches are instant
+      refetchOnWindowFocus: false,
+      retry: 1,
+      // Show the previously loaded data instantly while refetching in the
+      // background instead of flashing a skeleton on every navigation.
+      placeholderData: keepPreviousData,
+    },
+  },
 });
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
