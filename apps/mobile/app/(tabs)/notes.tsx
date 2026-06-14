@@ -315,6 +315,7 @@ function NoteSheet({
   const [uploading, setUploading] = useState(false);
   const [lockModal, setLockModal] = useState<null | 'set' | 'remove'>(null);
   const [alertInfo, setAlertInfo] = useState<{ title: string; msg: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const isLocked = note?.isLocked ?? false;
 
@@ -391,6 +392,16 @@ function NoteSheet({
     onClose();
   }
 
+  async function handleDeleteConfirm() {
+    setDeleteConfirm(false);
+    try {
+      await onDelete?.();
+      onClose();
+    } catch (err: any) {
+      setAlertInfo({ title: 'Delete failed', msg: err.message ?? 'Could not delete note.' });
+    }
+  }
+
   async function handlePickImage() {
     if (!note?.id) {
       setAlertInfo({ title: 'Save first', msg: 'Please save the note before adding images.' });
@@ -451,12 +462,15 @@ function NoteSheet({
   return (
     <>
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+        <View style={styles.modalRoot}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-        <View style={[styles.sheetWrapper, { bottom: keyboardHeight }]}>
           <View
             style={[
               styles.sheet,
-              { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+              {
+                paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 24),
+                marginBottom: keyboardHeight,
+              },
               isMirrorSheet
                 ? {
                     backgroundColor: 'transparent',
@@ -641,10 +655,7 @@ function NoteSheet({
               <View style={styles.sheetActions}>
                 {onDelete && (
                   <TouchableOpacity
-                    onPress={() => {
-                      // Use in-sheet confirm instead of system Alert
-                      setAlertInfo({ title: 'Delete Note', msg: 'Are you sure? This cannot be undone.' });
-                    }}
+                    onPress={() => setDeleteConfirm(true)}
                     style={styles.deleteBtn}
                   >
                     <Text style={styles.deleteBtnText}>🗑️ Delete</Text>
@@ -688,6 +699,18 @@ function NoteSheet({
         value={reminderAt}
         onConfirm={(d) => { setReminderAt(d); setShowReminderPicker(false); }}
         onDismiss={() => setShowReminderPicker(false)}
+      />
+
+      {/* Delete confirmation — wired to actually run the delete */}
+      <AppAlert
+        visible={deleteConfirm}
+        title="Delete Note"
+        message="Are you sure? This cannot be undone."
+        icon="🗑️"
+        confirmLabel="Delete"
+        confirmDestructive
+        onClose={() => setDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
       />
 
       {/* Modern in-app alert */}
@@ -1039,8 +1062,8 @@ const styles = StyleSheet.create({
   fabText: { color: '#fff', fontSize: 26, lineHeight: 28, fontWeight: '300' },
 
   // Sheet
-  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheetWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  modalRoot: { flex: 1 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 12, maxHeight: '92%',

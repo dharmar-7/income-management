@@ -116,12 +116,15 @@ function AddBudgetSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <TouchableOpacity style={sheet.backdrop} activeOpacity={1} onPress={handleClose} />
-      <View style={[sheet.wrapper, { bottom: keyboardHeight }]}>
+      <View style={sheet.modalRoot}>
+        <TouchableOpacity style={sheet.backdrop} activeOpacity={1} onPress={handleClose} />
         <View
           style={[
             sheet.container,
-            { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+            {
+              paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 24),
+              marginBottom: keyboardHeight,
+            },
           ]}
         >
           <View style={sheet.handle} />
@@ -412,8 +415,8 @@ const styles = StyleSheet.create({
 });
 
 const sheet = StyleSheet.create({
-  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
-  wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  modalRoot: { flex: 1 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   container: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 24, borderTopRightRadius: 24,

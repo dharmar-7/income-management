@@ -113,13 +113,16 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
   return (
     <>
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+      <View style={styles.modalRoot}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
 
-      <View style={[styles.wrapper, { bottom: keyboardHeight }]}>
         <View
           style={[
             styles.sheet,
-            { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+            {
+              paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 24),
+              marginBottom: keyboardHeight,
+            },
           ]}
         >
           <View style={styles.handle} />
@@ -225,8 +228,8 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
 }
 
 const styles = StyleSheet.create({
-  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
-  wrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  modalRoot: { flex: 1 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
     backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 12, maxHeight: '90%',

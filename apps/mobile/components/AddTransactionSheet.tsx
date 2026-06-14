@@ -112,13 +112,16 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
       transparent
       onRequestClose={handleClose}
     >
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
+      <View style={styles.modalRoot}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
 
-      <View style={[styles.sheetWrapper, { bottom: keyboardHeight }]}>
         <View
           style={[
             styles.sheet,
-            { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+            {
+              paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 24),
+              marginBottom: keyboardHeight,
+            },
           ]}
         >
           {/* Handle bar */}
@@ -295,12 +298,10 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
 }
 
 const styles = StyleSheet.create({
+  modalRoot: { flex: 1 },
   backdrop: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheetWrapper: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
   },
   sheet: {
     backgroundColor: '#fff',

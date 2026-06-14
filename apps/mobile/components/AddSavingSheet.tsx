@@ -400,13 +400,16 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
       transparent
       onRequestClose={onClose}
     >
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+      <View style={styles.modalRoot}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-      <View style={[styles.sheetWrapper, { bottom: keyboardHeight }]}>
         <View
           style={[
             styles.sheet,
-            { paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 16) },
+            {
+              paddingBottom: keyboardHeight > 0 ? 16 : Math.max(insets.bottom, 24),
+              marginBottom: keyboardHeight,
+            },
           ]}
         >
           <View style={styles.handle} />
@@ -430,12 +433,10 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
 }
 
 const styles = StyleSheet.create({
+  modalRoot: { flex: 1 },
   backdrop: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheetWrapper: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
   },
   sheet: {
     backgroundColor: '#fff',
