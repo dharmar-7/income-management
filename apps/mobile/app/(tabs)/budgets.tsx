@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
 import {
@@ -24,7 +24,7 @@ interface BudgetWithProgress {
   amount: number;
   month: number;
   year: number;
-  category: { name: string; icon: string };
+  category: { id: string; name: string; icon: string };
   spent: number;
   remaining: number;
   percentUsed: number;
@@ -55,16 +55,18 @@ const MONTHS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
-// ─── Add Budget Sheet ──────────────────────────────────────────────────────────
+// ─── Budget Sheet (add + edit) ───────────────────────────────────────────────
 
-function AddBudgetSheet({
+function BudgetSheet({
   visible,
   categories,
+  editing,
   onClose,
   onSuccess,
 }: {
   visible: boolean;
   categories: Category[];
+  editing: BudgetWithProgress | null;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -73,23 +75,35 @@ function AddBudgetSheet({
   const sheet = useMemo(() => makeSheet(c), [c]);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
-  const now = new Date();
+  const isEditing = !!editing;
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
-  const [month, setMonth] = useState(String(now.getMonth() + 1));
-  const [year, setYear] = useState(String(now.getFullYear()));
+  const [month, setMonth] = useState(String(new Date().getMonth() + 1));
+  const [year, setYear] = useState(String(new Date().getFullYear()));
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [alertData, setAlertData] = useState<{ title: string; message: string } | null>(null);
   function showAlert(t: string, m: string) { setAlertData({ title: t, message: m }); }
 
-  function reset() {
-    setCategoryId('');
-    setAmount('');
-    setMonth(String(new Date().getMonth() + 1));
-    setYear(String(new Date().getFullYear()));
-  }
-
-  function handleClose() { reset(); onClose(); }
+  // Seed the form every time the sheet opens. In edit mode the category is fixed
+  // (you're changing that category's limit) so we pre-fill and lock it; the PUT is
+  // an upsert keyed on category+month+year, so editing simply overwrites the amount.
+  useEffect(() => {
+    if (!visible) return;
+    if (editing) {
+      setCategoryId(editing.category.id);
+      setAmount(String(editing.amount));
+      setMonth(String(editing.month));
+      setYear(String(editing.year));
+    } else {
+      setCategoryId('');
+      setAmount('');
+      setMonth(String(new Date().getMonth() + 1));
+      setYear(String(new Date().getFullYear()));
+    }
+    setConfirmDelete(false);
+  }, [visible, editing]);
 
   async function handleSubmit() {
     if (!categoryId) { showAlert('Required', 'Please select a category.'); return; }
@@ -108,7 +122,6 @@ function AddBudgetSheet({
         method: 'PUT',
         body: JSON.stringify({ categoryId, amount: parsed, month: m, year: y }),
       });
-      reset();
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -118,10 +131,28 @@ function AddBudgetSheet({
     }
   }
 
+  async function handleDelete() {
+    if (!editing) return;
+    setDeleting(true);
+    try {
+      const token = await getToken();
+      await apiFetch(`/budgets/${editing.id}`, token!, { method: 'DELETE' });
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      showAlert('Error', err.message ?? 'Could not delete budget.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const busy = loading || deleting;
+  const selectedCat = categories.find(x => x.id === categoryId) ?? editing?.category;
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={sheet.modalRoot}>
-        <TouchableOpacity style={sheet.backdrop} activeOpacity={1} onPress={handleClose} />
+        <TouchableOpacity style={sheet.backdrop} activeOpacity={1} onPress={busy ? undefined : onClose} />
         <View
           style={[
             sheet.container,
@@ -133,8 +164,8 @@ function AddBudgetSheet({
         >
           <View style={sheet.handle} />
           <View style={sheet.header}>
-            <Text style={sheet.title}>+ Set Monthly Budget</Text>
-            <TouchableOpacity onPress={handleClose}>
+            <Text style={sheet.title}>{isEditing ? 'Edit Budget' : '+ Set Monthly Budget'}</Text>
+            <TouchableOpacity onPress={busy ? undefined : onClose}>
               <Text style={sheet.closeBtn}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -142,24 +173,35 @@ function AddBudgetSheet({
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* Category */}
             <Text style={sheet.label}>Category</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ marginBottom: 16 }}
-              contentContainerStyle={{ gap: 8 }}
-            >
-              {categories.map(c => (
-                <TouchableOpacity
-                  key={c.id}
-                  onPress={() => setCategoryId(c.id)}
-                  style={[sheet.chip, categoryId === c.id && sheet.chipActive]}
-                >
-                  <Text style={[sheet.chipText, categoryId === c.id && sheet.chipTextActive]}>
-                    {c.icon} {c.name}
+            {isEditing ? (
+              <View style={{ marginBottom: 16 }}>
+                <View style={[sheet.chip, sheet.chipActive, { alignSelf: 'flex-start' }]}>
+                  <Text style={[sheet.chipText, sheet.chipTextActive]}>
+                    {selectedCat?.icon} {selectedCat?.name}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                </View>
+                <Text style={sheet.hint}>Category can't be changed when editing.</Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginBottom: 16 }}
+                contentContainerStyle={{ gap: 8 }}
+              >
+                {categories.map(cat => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    onPress={() => setCategoryId(cat.id)}
+                    style={[sheet.chip, categoryId === cat.id && sheet.chipActive]}
+                  >
+                    <Text style={[sheet.chipText, categoryId === cat.id && sheet.chipTextActive]}>
+                      {cat.icon} {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
 
             {/* Amount */}
             <Text style={sheet.label}>Budget Amount (₹)</Text>
@@ -182,8 +224,9 @@ function AddBudgetSheet({
                   placeholder="5"
                   placeholderTextColor={c.textFaint}
                   keyboardType="number-pad"
-                  style={sheet.input}
+                  style={[sheet.input, isEditing && sheet.inputLocked]}
                   maxLength={2}
+                  editable={!isEditing}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -194,31 +237,55 @@ function AddBudgetSheet({
                   placeholder="2026"
                   placeholderTextColor={c.textFaint}
                   keyboardType="number-pad"
-                  style={sheet.input}
+                  style={[sheet.input, isEditing && sheet.inputLocked]}
                   maxLength={4}
+                  editable={!isEditing}
                 />
               </View>
             </View>
 
             <TouchableOpacity
-              style={[sheet.submitBtn, loading && { opacity: 0.6 }]}
+              style={[sheet.submitBtn, busy && { opacity: 0.6 }]}
               onPress={handleSubmit}
-              disabled={loading}
+              disabled={busy}
             >
               {loading
                 ? <ActivityIndicator color={c.contrastText} />
-                : <Text style={sheet.submitText}>Save Budget</Text>
+                : <Text style={sheet.submitText}>{isEditing ? 'Update Budget' : 'Save Budget'}</Text>
               }
             </TouchableOpacity>
+
+            {isEditing && (
+              <TouchableOpacity
+                style={[sheet.deleteBtn, busy && { opacity: 0.6 }]}
+                onPress={() => setConfirmDelete(true)}
+                disabled={busy}
+              >
+                {deleting
+                  ? <ActivityIndicator color={c.danger} />
+                  : <Text style={sheet.deleteText}>Delete budget</Text>
+                }
+              </TouchableOpacity>
+            )}
             <View style={{ height: 24 }} />
           </ScrollView>
         </View>
       </View>
+
       <AppAlert
         visible={!!alertData}
         title={alertData?.title ?? ''}
         message={alertData?.message ?? ''}
         onClose={() => setAlertData(null)}
+      />
+      <AppAlert
+        visible={confirmDelete}
+        title="Delete this budget?"
+        message={`The monthly limit for ${editing?.category.name ?? 'this category'} will be removed. Your transactions stay untouched.`}
+        confirmLabel="Delete"
+        confirmDestructive
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
       />
     </Modal>
   );
@@ -231,7 +298,12 @@ export default function BudgetsScreen() {
   const { theme: c } = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
   const queryClient = useQueryClient();
-  const [showAdd, setShowAdd] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // null = "add" mode; a budget = "edit" mode for that row.
+  const [editingBudget, setEditingBudget] = useState<BudgetWithProgress | null>(null);
+
+  function openAdd() { setEditingBudget(null); setSheetOpen(true); }
+  function openEdit(b: BudgetWithProgress) { setEditingBudget(b); setSheetOpen(true); }
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['budget-progress'],
@@ -260,10 +332,11 @@ export default function BudgetsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <AddBudgetSheet
-        visible={showAdd}
+      <BudgetSheet
+        visible={sheetOpen}
         categories={categories}
-        onClose={() => setShowAdd(false)}
+        editing={editingBudget}
+        onClose={() => setSheetOpen(false)}
         onSuccess={invalidate}
       />
 
@@ -305,14 +378,22 @@ export default function BudgetsScreen() {
               : `${formatINR(budget.remaining)} left`;
 
             return (
-              <View key={budget.id} style={styles.card}>
+              <TouchableOpacity
+                key={budget.id}
+                style={styles.card}
+                activeOpacity={0.7}
+                onPress={() => openEdit(budget)}
+              >
                 <View style={styles.cardHeader}>
                   <Text style={styles.categoryName}>
                     {budget.category.icon} {budget.category.name}
                   </Text>
-                  <Text style={[styles.statusLabel, isOver && styles.overLabel]}>
-                    {statusLabel}
-                  </Text>
+                  <View style={styles.cardHeaderRight}>
+                    <Text style={[styles.statusLabel, isOver && styles.overLabel]}>
+                      {statusLabel}
+                    </Text>
+                    <Text style={styles.editHint}>✏️</Text>
+                  </View>
                 </View>
 
                 {/* Progress bar */}
@@ -336,14 +417,14 @@ export default function BudgetsScreen() {
                     {Math.round(budget.percentUsed)}%
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
       </ScrollView>
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)}>
+      <TouchableOpacity style={styles.fab} onPress={openAdd}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -376,6 +457,8 @@ const makeStyles = (c: Theme) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  cardHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  editHint: { fontSize: 12, opacity: 0.5 },
   categoryName: { fontSize: 15, fontWeight: '600', color: c.text },
   statusLabel: { fontSize: 12, color: c.textFaint },
   overLabel: { color: c.danger, fontWeight: '600' },
@@ -439,6 +522,8 @@ const makeSheet = (c: Theme) => StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 12,
     fontSize: 14, color: c.text, marginBottom: 16,
   },
+  inputLocked: { backgroundColor: c.chipBg, color: c.textMuted },
+  hint: { fontSize: 11, color: c.textFaint, marginTop: 6 },
   chip: {
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99,
     borderWidth: 1, borderColor: c.chipBorder, backgroundColor: c.chipBg,
@@ -448,4 +533,9 @@ const makeSheet = (c: Theme) => StyleSheet.create({
   chipTextActive: { color: c.onColor },
   submitBtn: { backgroundColor: c.contrast, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
   submitText: { color: c.contrastText, fontSize: 16, fontWeight: '700' },
+  deleteBtn: {
+    borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 10,
+    borderWidth: 1.5, borderColor: c.danger, backgroundColor: 'transparent',
+  },
+  deleteText: { color: c.danger, fontSize: 15, fontWeight: '700' },
 });

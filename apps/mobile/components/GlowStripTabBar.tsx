@@ -125,9 +125,9 @@ function TabItem({
   );
 }
 
-const INDIGO_BG_D = 'rgba(99,102,241,0.18)';
-const INDIGO_BG_L = 'rgba(99,102,241,0.13)';
-const INDIGO_OPEN = 'rgba(99,102,241,0.25)';
+const INDIGO_BG_D = 'rgba(99,102,241,0.24)';
+const INDIGO_BG_L = 'rgba(99,102,241,0.16)';
+const INDIGO_OPEN = 'rgba(99,102,241,0.30)';
 
 const s = StyleSheet.create({
   wrap: {
@@ -155,8 +155,10 @@ const s = StyleSheet.create({
     minWidth: 54,
   },
   ic: {
-    width: 38, height: 38,
-    borderRadius: 19,
+    // Horizontal stadium pill (borderRadius === height / 2) so the active state
+    // reads as a clearly-curved highlight rather than a boxy chip.
+    width: 50, height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },

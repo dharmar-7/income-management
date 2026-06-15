@@ -15,7 +15,10 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: bg },
         headerShadowVisible: false,
         headerTitle: () => <VeloraLogoMobile size="md" />,
-        sceneStyle: { paddingBottom: 110 },
+        // backgroundColor is REQUIRED here: the 110px paddingBottom (clearance for the
+        // floating tab bar) otherwise exposes React Navigation's default white scene
+        // background — invisible in light mode, a glaring white band in dark mode.
+        sceneStyle: { backgroundColor: c.bg, paddingBottom: 110 },
       }}
     >
       <Tabs.Screen name="index"        options={{ title: 'Dashboard'    }} />
