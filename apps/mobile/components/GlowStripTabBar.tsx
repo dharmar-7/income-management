@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
   View, Text, TouchableOpacity, Modal, Pressable,
-  StyleSheet, useColorScheme,
+  StyleSheet,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import VeloraGem from '@/components/VeloraGem';
+import { useTheme } from '@/context/ThemeContext';
 
 const MAIN = ['index', 'transactions', 'budgets', 'savings'] as const;
 type MainRoute = (typeof MAIN)[number];
@@ -34,7 +35,8 @@ const MORE_ITEMS = [
 
 export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps) {
   const [open, setOpen] = useState(false);
-  const dark = useColorScheme() === 'dark';
+  const { scheme } = useTheme();
+  const dark = scheme === 'dark';
   const insets = useSafeAreaInsets();
 
   const active = state.routes[state.index]?.name;

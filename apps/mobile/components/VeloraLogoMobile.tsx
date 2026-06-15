@@ -1,5 +1,6 @@
-import { View, Text, useColorScheme } from 'react-native';
+import { View, Text } from 'react-native';
 import VeloraGem from '@/components/VeloraGem';
+import { useTheme } from '@/context/ThemeContext';
 
 interface Props {
   size?: 'sm' | 'md' | 'lg';
@@ -7,8 +8,8 @@ interface Props {
 }
 
 export default function VeloraLogoMobile({ size = 'md', name = 'Velora' }: Props) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { scheme } = useTheme();
+  const isDark = scheme === 'dark';
 
   const scale = size === 'sm' ? 0.75 : size === 'lg' ? 1.35 : 1;
   const s     = Math.round(28 * scale);

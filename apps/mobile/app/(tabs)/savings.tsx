@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
 import {
@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 import AddSavingSheet from '@/components/AddSavingSheet';
 import AppAlert from '@/components/AppAlert';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,6 +81,8 @@ function formatINR(n: number) {
 
 export default function SavingsScreen() {
   const { getToken } = useAuth();
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const queryClient = useQueryClient();
 
   const [sheetMode, setSheetMode] = useState<'platform' | 'saving' | null>(null);
@@ -190,15 +194,15 @@ export default function SavingsScreen() {
         {/* ── Portfolio Summary ───────────────────────────────────────── */}
         {sum && sum.count > 0 && (
           <View style={styles.summaryRow}>
-            <View style={[styles.summaryCard, { backgroundColor: '#6366f1' }]}>
+            <View style={[styles.summaryCard, { backgroundColor: c.primary }]}>
               <Text style={styles.summaryLabel}>Invested</Text>
               <Text style={styles.summaryValue}>{formatINR(sum.totalNetCost)}</Text>
             </View>
-            <View style={[styles.summaryCard, { backgroundColor: '#4f46e5' }]}>
+            <View style={[styles.summaryCard, { backgroundColor: c.primaryDeep }]}>
               <Text style={styles.summaryLabel}>Current</Text>
               <Text style={styles.summaryValue}>{formatINR(sum.totalCurrentValue)}</Text>
             </View>
-            <View style={[styles.summaryCard, { backgroundColor: isGain ? '#059669' : '#e11d48' }]}>
+            <View style={[styles.summaryCard, { backgroundColor: isGain ? c.success : c.danger }]}>
               <Text style={styles.summaryLabel}>Gain/Loss</Text>
               <Text style={styles.summaryValue}>
                 {isGain ? '+' : ''}{formatINR(sum.totalGainLoss)}
@@ -314,59 +318,59 @@ export default function SavingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
+const makeStyles = (c: Theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   scroll: { flex: 1 },
   content: { padding: 16, gap: 10, paddingBottom: 32 },
 
   summaryRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
   summaryCard: { flex: 1, borderRadius: 14, padding: 12, gap: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   summaryLabel: { fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
-  summaryValue: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  summaryValue: { fontSize: 14, fontWeight: '700', color: c.onColor },
   summaryPct: { fontSize: 10, color: 'rgba(255,255,255,0.8)' },
 
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  addBtn: { backgroundColor: '#6366f1', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 6 },
-  addBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: c.text },
+  addBtn: { backgroundColor: c.primary, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 6 },
+  addBtnText: { color: c.onColor, fontSize: 13, fontWeight: '700' },
 
-  emptyCard: { backgroundColor: '#fff', borderRadius: 14, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' },
-  emptyText: { fontSize: 14, color: '#6b7280', fontWeight: '600' },
-  emptyHint: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
+  emptyCard: { backgroundColor: c.card, borderRadius: 14, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: c.cardBorder },
+  emptyText: { fontSize: 14, color: c.textMuted, fontWeight: '600' },
+  emptyHint: { fontSize: 12, color: c.textFaint, marginTop: 4 },
 
   platformCard: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: '#f3f4f6',
+    backgroundColor: c.card, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: c.cardBorder,
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   platformHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  platformName: { fontSize: 15, fontWeight: '700', color: '#111827' },
-  platformNote: { fontSize: 12, color: '#9ca3af', marginBottom: 8 },
+  platformName: { fontSize: 15, fontWeight: '700', color: c.text },
+  platformNote: { fontSize: 12, color: c.textFaint, marginBottom: 8 },
   platformRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  platformRowLast: { borderTopWidth: 1, borderTopColor: '#f3f4f6', marginTop: 4, paddingTop: 8 },
-  platformRowLabel: { fontSize: 13, color: '#6b7280' },
-  platformRowValue: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  platformRowLabelBold: { fontSize: 13, color: '#374151', fontWeight: '600' },
+  platformRowLast: { borderTopWidth: 1, borderTopColor: c.cardBorder, marginTop: 4, paddingTop: 8 },
+  platformRowLabel: { fontSize: 13, color: c.textMuted },
+  platformRowValue: { fontSize: 13, color: c.text, fontWeight: '500' },
+  platformRowLabelBold: { fontSize: 13, color: c.text, fontWeight: '600' },
   platformRowValueBold: { fontSize: 14, fontWeight: '700' },
 
   savingCard: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: '#f3f4f6',
+    backgroundColor: c.card, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: c.cardBorder,
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   savingHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  savingIconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
+  savingIconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.chipBg, alignItems: 'center', justifyContent: 'center' },
   savingIcon: { fontSize: 18 },
   savingMeta: { flex: 1 },
-  savingName: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  savingType: { fontSize: 11, color: '#9ca3af', marginTop: 1 },
+  savingName: { fontSize: 14, fontWeight: '600', color: c.text },
+  savingType: { fontSize: 11, color: c.textFaint, marginTop: 1 },
   savingValues: { alignItems: 'flex-end' },
-  savingCurrentValue: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  savingCurrentValue: { fontSize: 14, fontWeight: '700', color: c.text },
   savingGainLoss: { fontSize: 11, fontWeight: '600', marginTop: 1 },
-  savingFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
-  savingDetail: { fontSize: 11, color: '#9ca3af' },
+  savingFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.cardBorder },
+  savingDetail: { fontSize: 11, color: c.textFaint },
 
   deleteIcon: { fontSize: 16 },
-  positive: { color: '#059669' },
-  negative: { color: '#e11d48' },
+  positive: { color: c.success },
+  negative: { color: c.danger },
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Modal,
   View,
@@ -14,6 +14,8 @@ import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -64,6 +66,8 @@ function formatINR(n: number) {
 // ─── Add Platform Form ──────────────────────────────────────────────────────────
 
 function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const { getToken } = useAuth();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
   const [name, setName] = useState('');
@@ -118,7 +122,7 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
           value={name}
           onChangeText={setName}
           placeholder="e.g. Groww, Zerodha, Post Office"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={c.textFaint}
           style={styles.input}
           maxLength={100}
         />
@@ -130,19 +134,19 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
           value={totalAdded}
           onChangeText={setTotalAdded}
           placeholder="e.g. 5000"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={c.textFaint}
           keyboardType="decimal-pad"
           style={styles.input}
         />
       </View>
 
       <View style={styles.field}>
-        <Text style={styles.label}>Note <Text style={{ color: '#9ca3af' }}>(optional)</Text></Text>
+        <Text style={styles.label}>Note <Text style={{ color: c.textFaint }}>(optional)</Text></Text>
         <TextInput
           value={note}
           onChangeText={setNote}
           placeholder="e.g. Primary brokerage"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={c.textFaint}
           style={styles.input}
           maxLength={300}
         />
@@ -154,7 +158,7 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
         disabled={loading}
       >
         {loading
-          ? <ActivityIndicator color="#fff" />
+          ? <ActivityIndicator color={c.onColor} />
           : <Text style={styles.submitText}>Add Platform</Text>
         }
       </TouchableOpacity>
@@ -173,6 +177,8 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
 // ─── Add Saving Form ────────────────────────────────────────────────────────────
 
 function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: InvestmentPlatform[]; onClose: () => void; onSuccess: () => void }) {
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const { getToken } = useAuth();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
   const [savingType, setSavingType] = useState<SavingType>('MUTUAL_FUNDS');
@@ -259,7 +265,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
           value={name}
           onChangeText={setName}
           placeholder="e.g. Nifty 50 SIP, PPF, SGB 2025"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={c.textFaint}
           style={styles.input}
           maxLength={200}
         />
@@ -272,7 +278,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
             value={investedAmount}
             onChangeText={v => { setInvestedAmount(v); if (!currentValue) setCurrentValue(v); }}
             placeholder="0"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={c.textFaint}
             keyboardType="decimal-pad"
             style={styles.input}
           />
@@ -283,7 +289,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
             value={charges}
             onChangeText={setCharges}
             placeholder="0"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={c.textFaint}
             keyboardType="decimal-pad"
             style={styles.input}
           />
@@ -294,7 +300,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
             value={currentValue}
             onChangeText={setCurrentValue}
             placeholder="0"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={c.textFaint}
             keyboardType="decimal-pad"
             style={styles.input}
           />
@@ -308,18 +314,18 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
             value={startDate}
             onChangeText={setStartDate}
             placeholder="2026-01-01"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={c.textFaint}
             style={styles.input}
             maxLength={10}
           />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Maturity Date <Text style={{ color: '#9ca3af' }}>(optional)</Text></Text>
+          <Text style={styles.label}>Maturity Date <Text style={{ color: c.textFaint }}>(optional)</Text></Text>
           <TextInput
             value={maturityDate}
             onChangeText={setMaturityDate}
             placeholder="2030-01-01"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={c.textFaint}
             style={styles.input}
             maxLength={10}
           />
@@ -329,7 +335,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
       {/* Platform picker */}
       {platforms.length > 0 && (
         <View style={styles.field}>
-          <Text style={styles.label}>Platform <Text style={{ color: '#9ca3af' }}>(optional)</Text></Text>
+          <Text style={styles.label}>Platform <Text style={{ color: c.textFaint }}>(optional)</Text></Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 4 }}>
               <TouchableOpacity
@@ -355,12 +361,12 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
       )}
 
       <View style={styles.field}>
-        <Text style={styles.label}>Note <Text style={{ color: '#9ca3af' }}>(optional)</Text></Text>
+        <Text style={styles.label}>Note <Text style={{ color: c.textFaint }}>(optional)</Text></Text>
         <TextInput
           value={note}
           onChangeText={setNote}
           placeholder="e.g. Monthly ₹500 SIP"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={c.textFaint}
           style={styles.input}
           maxLength={300}
         />
@@ -372,7 +378,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
         disabled={loading}
       >
         {loading
-          ? <ActivityIndicator color="#fff" />
+          ? <ActivityIndicator color={c.onColor} />
           : <Text style={styles.submitText}>Add Investment</Text>
         }
       </TouchableOpacity>
@@ -391,6 +397,8 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
 // ─── Sheet ──────────────────────────────────────────────────────────────────────
 
 export default function AddSavingSheet({ visible, mode, platforms, onClose, onSuccess }: Props) {
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   return (
@@ -432,14 +440,14 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Theme) => StyleSheet.create({
   modalRoot: { flex: 1 },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: c.overlay,
   },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -447,39 +455,39 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
   },
   handle: {
-    width: 40, height: 4, backgroundColor: '#e5e7eb',
+    width: 40, height: 4, backgroundColor: c.inputBorder,
     borderRadius: 2, alignSelf: 'center', marginBottom: 16,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 16,
   },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  closeBtn: { fontSize: 18, color: '#9ca3af', padding: 4 },
+  title: { fontSize: 18, fontWeight: '700', color: c.text },
+  closeBtn: { fontSize: 18, color: c.textFaint, padding: 4 },
 
-  hint: { fontSize: 13, color: '#6b7280', marginBottom: 16, lineHeight: 18 },
+  hint: { fontSize: 13, color: c.textMuted, marginBottom: 16, lineHeight: 18 },
 
   field: { marginBottom: 14 },
-  label: { fontSize: 12, fontWeight: '500', color: '#6b7280', marginBottom: 6 },
+  label: { fontSize: 12, fontWeight: '500', color: c.textMuted, marginBottom: 6 },
   input: {
-    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+    borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: '#111827', backgroundColor: '#fff',
+    fontSize: 14, color: c.text, backgroundColor: c.inputBg,
   },
 
   row3: { flexDirection: 'row', gap: 8, marginBottom: 14 },
 
   typeChip: {
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 99,
-    borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: c.inputBorder, backgroundColor: c.card,
   },
-  typeChipActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  typeChipText: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
-  typeChipTextActive: { color: '#fff' },
+  typeChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+  typeChipText: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
+  typeChipTextActive: { color: c.onColor },
 
   submitBtn: {
-    backgroundColor: '#6366f1', borderRadius: 14,
+    backgroundColor: c.primary, borderRadius: 14,
     paddingVertical: 16, alignItems: 'center', marginTop: 8,
   },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  submitText: { color: c.onColor, fontSize: 16, fontWeight: '700' },
 });

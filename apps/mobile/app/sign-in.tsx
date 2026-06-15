@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import VeloraLogoMobile from '@/components/VeloraLogoMobile';
+import { useTheme } from '@/context/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -19,6 +20,7 @@ WebBrowser.maybeCompleteAuthSession();
 //            so we use signIn.authenticateWithRedirect instead.
 
 export default function SignInScreen() {
+  const { theme: c } = useTheme();
   const { startSSOFlow } = useSSO();
   const { signIn } = useSignIn();
   const [loading, setLoading] = useState(false);
@@ -54,7 +56,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f3ff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
       <View style={{
         flex: 1,
         justifyContent: 'space-between',
@@ -67,7 +69,7 @@ export default function SignInScreen() {
         <View style={{ alignItems: 'center', gap: 12 }}>
           <VeloraLogoMobile size="lg" />
           <Text style={{
-            fontSize: 15, color: '#6b7280',
+            fontSize: 15, color: c.textMuted,
             textAlign: 'center', lineHeight: 22, marginTop: 4,
           }}>
             Your spending, broken into clarity.
@@ -95,21 +97,21 @@ export default function SignInScreen() {
           ].map((item, i) => (
             <View key={i} style={{
               flexDirection: 'row', alignItems: 'center', gap: 14,
-              backgroundColor: '#fff', borderRadius: 16, padding: 14,
-              borderWidth: 1, borderColor: '#ede9fe',
+              backgroundColor: c.card, borderRadius: 16, padding: 14,
+              borderWidth: 1, borderColor: c.cardBorder,
             }}>
               <View style={{
                 width: 42, height: 42, borderRadius: 12,
-                backgroundColor: '#f5f3ff',
+                backgroundColor: c.chipBg,
                 alignItems: 'center', justifyContent: 'center',
               }}>
                 <Text style={{ fontSize: 20 }}>{item.icon}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: '700', color: '#111827', fontSize: 13 }}>
+                <Text style={{ fontWeight: '700', color: c.text, fontSize: 13 }}>
                   {item.title}
                 </Text>
-                <Text style={{ color: '#9ca3af', fontSize: 12, marginTop: 2, lineHeight: 16 }}>
+                <Text style={{ color: c.textFaint, fontSize: 12, marginTop: 2, lineHeight: 16 }}>
                   {item.desc}
                 </Text>
               </View>
@@ -121,8 +123,8 @@ export default function SignInScreen() {
         <View style={{ gap: 12 }}>
           {/* Spectrum accent bar — echoes the Velora gem */}
           <View style={{ flexDirection: 'row', height: 3, borderRadius: 2, overflow: 'hidden', marginBottom: 2 }}>
-            {['#8b5cf6', '#6366f1', '#06b6d4', '#22c55e', '#f97316', '#f43f5e'].map((c, i) => (
-              <View key={i} style={{ flex: 1, backgroundColor: c }} />
+            {['#8b5cf6', '#6366f1', '#06b6d4', '#22c55e', '#f97316', '#f43f5e'].map((col, i) => (
+              <View key={i} style={{ flex: 1, backgroundColor: col }} />
             ))}
           </View>
 
@@ -131,12 +133,12 @@ export default function SignInScreen() {
             disabled={loading}
             activeOpacity={0.85}
             style={{
-              backgroundColor: '#6366f1',
+              backgroundColor: c.primary,
               paddingVertical: 16,
               borderRadius: 100,
               alignItems: 'center',
               opacity: loading ? 0.6 : 1,
-              shadowColor: '#6366f1',
+              shadowColor: c.primary,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.35,
               shadowRadius: 10,
@@ -144,11 +146,11 @@ export default function SignInScreen() {
             }}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={c.onColor} />
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff' }}>G</Text>
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: c.onColor }}>G</Text>
+                <Text style={{ color: c.onColor, fontSize: 15, fontWeight: '700' }}>
                   Continue with Google
                 </Text>
               </View>
@@ -156,11 +158,11 @@ export default function SignInScreen() {
           </TouchableOpacity>
 
           {error ? (
-            <Text style={{ color: '#ef4444', fontSize: 12, textAlign: 'center' }}>{error}</Text>
+            <Text style={{ color: c.danger, fontSize: 12, textAlign: 'center' }}>{error}</Text>
           ) : null}
 
           {/* Clarity text — answers the user's question directly */}
-          <Text style={{ color: '#9ca3af', fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
+          <Text style={{ color: c.textFaint, fontSize: 12, textAlign: 'center', lineHeight: 18 }}>
             Already have an account? You'll be signed straight in.{'\n'}
             New to Velora? Your account is created automatically.
           </Text>

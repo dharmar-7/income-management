@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider, keepPreviousData } from '@tanstack/re
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { apiFetch } from '@/lib/api';
 
 const queryClient = new QueryClient({
@@ -56,6 +58,12 @@ function AuthGuard() {
   return null;
 }
 
+// Drives the OS status-bar text colour from the active theme.
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />;
+}
+
 export default function RootLayout() {
   return (
     // SafeAreaProvider is REQUIRED: on Expo SDK 54 Android is edge-to-edge, so the
@@ -63,15 +71,18 @@ export default function RootLayout() {
     // useSafeAreaInsets() returns zeros and bottom content (sheet buttons, tab bar)
     // gets clipped by the nav bar.
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <ClerkProvider
-        publishableKey={publishableKey}
-        tokenCache={Platform.OS === 'web' ? undefined : tokenCache}
-      >
-        <QueryClientProvider client={queryClient}>
-          <AuthGuard />
-          <Slot />
-        </QueryClientProvider>
-      </ClerkProvider>
+      <ThemeProvider>
+        <ClerkProvider
+          publishableKey={publishableKey}
+          tokenCache={Platform.OS === 'web' ? undefined : tokenCache}
+        >
+          <QueryClientProvider client={queryClient}>
+            <ThemedStatusBar />
+            <AuthGuard />
+            <Slot />
+          </QueryClientProvider>
+        </ClerkProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

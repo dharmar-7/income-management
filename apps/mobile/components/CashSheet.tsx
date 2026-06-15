@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Modal,
   View,
@@ -14,6 +14,8 @@ import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 type SheetMode = 'add' | 'spend';
 
@@ -48,6 +50,8 @@ function formatINR(n: number) {
 
 export default function CashSheet({ visible, mode, currentBalance, onClose, onSuccess }: Props) {
   const { getToken } = useAuth();
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
@@ -171,7 +175,7 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
               value={amount}
               onChangeText={setAmount}
               placeholder="0"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={c.textFaint}
               keyboardType="decimal-pad"
               style={styles.input}
             />
@@ -182,18 +186,18 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
               value={date}
               onChangeText={setDate}
               placeholder="2026-05-09"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={c.textFaint}
               style={styles.input}
               maxLength={10}
             />
 
             {/* Note */}
-            <Text style={styles.label}>Note <Text style={{ color: '#9ca3af' }}>(optional)</Text></Text>
+            <Text style={styles.label}>Note <Text style={{ color: c.textFaint }}>(optional)</Text></Text>
             <TextInput
               value={note}
               onChangeText={setNote}
               placeholder="e.g. Grocery run"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={c.textFaint}
               style={styles.input}
               maxLength={300}
             />
@@ -205,7 +209,7 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
               disabled={loading}
             >
               {loading
-                ? <ActivityIndicator color="#fff" />
+                ? <ActivityIndicator color={c.onColor} />
                 : <Text style={styles.submitText}>
                     {mode === 'add' ? 'Add Cash' : 'Record Spend'}
                   </Text>
@@ -227,38 +231,38 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Theme) => StyleSheet.create({
   modalRoot: { flex: 1 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  backdrop: { flex: 1, backgroundColor: c.overlay },
   sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 12, maxHeight: '90%',
   },
-  handle: { width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  handle: { width: 40, height: 4, backgroundColor: c.inputBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  closeBtn: { fontSize: 18, color: '#9ca3af', padding: 4 },
+  title: { fontSize: 18, fontWeight: '700', color: c.text },
+  closeBtn: { fontSize: 18, color: c.textFaint, padding: 4 },
 
   balanceBanner: { backgroundColor: '#fef3c7', borderRadius: 12, padding: 10, marginBottom: 16 },
   balanceBannerText: { fontSize: 13, color: '#92400e', fontWeight: '600', textAlign: 'center' },
 
-  label: { fontSize: 12, fontWeight: '500', color: '#6b7280', marginBottom: 6, marginTop: 4 },
+  label: { fontSize: 12, fontWeight: '500', color: c.textMuted, marginBottom: 6, marginTop: 4 },
   input: {
-    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+    borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: '#111827', marginBottom: 12,
+    fontSize: 14, color: c.text, marginBottom: 12,
   },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chip: {
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99,
-    backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb',
+    backgroundColor: c.chipBg, borderWidth: 1, borderColor: c.inputBorder,
   },
-  chipActive: { backgroundColor: '#f59e0b', borderColor: '#f59e0b' },
-  chipText: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
-  chipTextActive: { color: '#fff' },
+  chipActive: { backgroundColor: c.warning, borderColor: c.warning },
+  chipText: { fontSize: 13, color: c.textMuted, fontWeight: '500' },
+  chipTextActive: { color: c.onColor },
 
-  submitBtn: { backgroundColor: '#22c55e', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  submitBtnSpend: { backgroundColor: '#f97316' },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  submitBtn: { backgroundColor: c.success, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  submitBtnSpend: { backgroundColor: c.orange },
+  submitText: { color: c.onColor, fontSize: 16, fontWeight: '700' },
 });

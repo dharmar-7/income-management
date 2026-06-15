@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import {
   Modal, View, Text, TouchableOpacity, Pressable, StyleSheet,
-  Animated, useColorScheme,
+  Animated,
 } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 interface AppAlertProps {
   visible: boolean;
@@ -26,7 +27,8 @@ export default function AppAlert({
   confirmLabel, confirmDestructive,
   onClose, onConfirm,
 }: AppAlertProps) {
-  const dark = useColorScheme() === 'dark';
+  const { scheme } = useTheme();
+  const dark = scheme === 'dark';
   const scale = useRef(new Animated.Value(0.96)).current;
   const fade = useRef(new Animated.Value(0)).current;
 

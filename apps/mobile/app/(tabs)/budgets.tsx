@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
 import {
@@ -16,6 +16,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { apiFetch } from '@/lib/api';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 interface BudgetWithProgress {
   id: string;
@@ -67,6 +69,8 @@ function AddBudgetSheet({
   onSuccess: () => void;
 }) {
   const { getToken } = useAuth();
+  const { theme: c } = useTheme();
+  const sheet = useMemo(() => makeSheet(c), [c]);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const now = new Date();
@@ -163,7 +167,7 @@ function AddBudgetSheet({
               value={amount}
               onChangeText={setAmount}
               placeholder="e.g. 5000"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={c.textFaint}
               keyboardType="decimal-pad"
               style={sheet.input}
             />
@@ -176,7 +180,7 @@ function AddBudgetSheet({
                   value={month}
                   onChangeText={setMonth}
                   placeholder="5"
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={c.textFaint}
                   keyboardType="number-pad"
                   style={sheet.input}
                   maxLength={2}
@@ -188,7 +192,7 @@ function AddBudgetSheet({
                   value={year}
                   onChangeText={setYear}
                   placeholder="2026"
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={c.textFaint}
                   keyboardType="number-pad"
                   style={sheet.input}
                   maxLength={4}
@@ -202,7 +206,7 @@ function AddBudgetSheet({
               disabled={loading}
             >
               {loading
-                ? <ActivityIndicator color="#fff" />
+                ? <ActivityIndicator color={c.contrastText} />
                 : <Text style={sheet.submitText}>Save Budget</Text>
               }
             </TouchableOpacity>
@@ -224,6 +228,8 @@ function AddBudgetSheet({
 
 export default function BudgetsScreen() {
   const { getToken } = useAuth();
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
 
@@ -293,7 +299,7 @@ export default function BudgetsScreen() {
           data.data.map(budget => {
             const isOver = budget.percentUsed >= 100;
             const isWarning = budget.percentUsed >= 80 && !isOver;
-            const barColor = isOver ? '#ef4444' : isWarning ? '#eab308' : '#22c55e';
+            const barColor = isOver ? c.danger : isWarning ? c.warning : c.success;
             const statusLabel = isOver
               ? `${formatINR(Math.abs(budget.remaining))} over`
               : `${formatINR(budget.remaining)} left`;
@@ -346,100 +352,100 @@ export default function BudgetsScreen() {
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
+const makeStyles = (c: Theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16, gap: 10, paddingBottom: 100 },
   monthBadge: {
-    backgroundColor: '#111827',
+    backgroundColor: c.contrast,
     borderRadius: 12,
     padding: 14,
     marginBottom: 4,
   },
-  monthText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  monthSub: { color: '#9ca3af', fontSize: 12, marginTop: 2 },
+  monthText: { color: c.contrastText, fontWeight: '700', fontSize: 15 },
+  monthSub: { color: c.textFaint, fontSize: 12, marginTop: 2 },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 16,
     gap: 10,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
+    borderColor: c.cardBorder,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  categoryName: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  statusLabel: { fontSize: 12, color: '#9ca3af' },
-  overLabel: { color: '#ef4444', fontWeight: '600' },
+  categoryName: { fontSize: 15, fontWeight: '600', color: c.text },
+  statusLabel: { fontSize: 12, color: c.textFaint },
+  overLabel: { color: c.danger, fontWeight: '600' },
   track: {
     height: 8,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: c.track,
     borderRadius: 99,
     overflow: 'hidden',
   },
   bar: { height: '100%', borderRadius: 99 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
-  footerText: { fontSize: 12, color: '#9ca3af' },
+  footerText: { fontSize: 12, color: c.textFaint },
   skeleton: {
     height: 100,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: c.track,
     borderRadius: 16,
   },
   emptyCard: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 32,
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#f3f4f6',
+    borderColor: c.cardBorder,
   },
   emptyIcon: { fontSize: 36, marginBottom: 4 },
-  emptyText: { fontSize: 15, fontWeight: '600', color: '#374151' },
+  emptyText: { fontSize: 15, fontWeight: '600', color: c.text },
   emptyHint: {
     fontSize: 13,
-    color: '#9ca3af',
+    color: c.textFaint,
     textAlign: 'center',
     lineHeight: 20,
   },
   fab: {
     position: 'absolute', bottom: 104, right: 20,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#6366f1', shadowOffset: { width: 0, height: 4 },
+    backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center',
+    shadowColor: c.primary, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
-  fabText: { color: '#fff', fontSize: 26, lineHeight: 28, fontWeight: '300' },
+  fabText: { color: c.onColor, fontSize: 26, lineHeight: 28, fontWeight: '300' },
 });
 
-const sheet = StyleSheet.create({
+const makeSheet = (c: Theme) => StyleSheet.create({
   modalRoot: { flex: 1 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  backdrop: { flex: 1, backgroundColor: c.overlay },
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 12,
     maxHeight: '90%',
   },
-  handle: { width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  handle: { width: 40, height: 4, backgroundColor: c.inputBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  title: { fontSize: 17, fontWeight: '700', color: '#111827' },
-  closeBtn: { fontSize: 18, color: '#9ca3af', padding: 4 },
-  label: { fontSize: 12, fontWeight: '500', color: '#6b7280', marginBottom: 8 },
+  title: { fontSize: 17, fontWeight: '700', color: c.text },
+  closeBtn: { fontSize: 18, color: c.textFaint, padding: 4 },
+  label: { fontSize: 12, fontWeight: '500', color: c.textMuted, marginBottom: 8 },
   input: {
-    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+    borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: '#111827', marginBottom: 16,
+    fontSize: 14, color: c.text, marginBottom: 16,
   },
   chip: {
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99,
-    borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: c.chipBorder, backgroundColor: c.chipBg,
   },
-  chipActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  chipText: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
-  chipTextActive: { color: '#fff' },
-  submitBtn: { backgroundColor: '#111827', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  chipActive: { backgroundColor: c.primary, borderColor: c.primary },
+  chipText: { fontSize: 13, color: c.textMuted, fontWeight: '500' },
+  chipTextActive: { color: c.onColor },
+  submitBtn: { backgroundColor: c.contrast, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
+  submitText: { color: c.contrastText, fontSize: 16, fontWeight: '700' },
 });

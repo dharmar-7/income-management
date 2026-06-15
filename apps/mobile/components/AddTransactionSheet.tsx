@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Modal,
   View,
@@ -14,6 +14,8 @@ import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 interface Category {
   id: string;
@@ -34,6 +36,8 @@ function todayISO() {
 
 export default function AddTransactionSheet({ visible, categories, onClose, onSuccess }: Props) {
   const { getToken } = useAuth();
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
@@ -184,7 +188,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="0.00"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={c.textFaint}
                 keyboardType="decimal-pad"
                 style={styles.input}
               />
@@ -205,7 +209,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
                   : txType === 'REFUND' ? 'e.g. IRCTC'
                   : txType === 'INVESTMENT' ? 'e.g. Groww, Zerodha'
                   : 'e.g. Salary'}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={c.textFaint}
                 style={styles.input}
                 maxLength={200}
               />
@@ -251,7 +255,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
                 value={date}
                 onChangeText={setDate}
                 placeholder="2026-05-09"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={c.textFaint}
                 style={styles.input}
                 maxLength={10}
               />
@@ -259,12 +263,12 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
 
             {/* Note */}
             <View style={styles.field}>
-              <Text style={styles.label}>Note <Text style={{ color: '#9ca3af' }}>(optional)</Text></Text>
+              <Text style={styles.label}>Note <Text style={{ color: c.textFaint }}>(optional)</Text></Text>
               <TextInput
                 value={description}
                 onChangeText={setDescription}
                 placeholder="e.g. Q1 electricity bill"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={c.textFaint}
                 style={styles.input}
                 maxLength={500}
               />
@@ -277,7 +281,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
               disabled={loading}
             >
               {loading
-                ? <ActivityIndicator color="#fff" />
+                ? <ActivityIndicator color={c.onColor} />
                 : <Text style={styles.submitText}>Add Transaction</Text>
               }
             </TouchableOpacity>
@@ -297,14 +301,14 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Theme) => StyleSheet.create({
   modalRoot: { flex: 1 },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: c.overlay,
   },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -312,55 +316,55 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
   },
   handle: {
-    width: 40, height: 4, backgroundColor: '#e5e7eb',
+    width: 40, height: 4, backgroundColor: c.inputBorder,
     borderRadius: 2, alignSelf: 'center', marginBottom: 16,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 20,
   },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827' },
-  closeBtn: { fontSize: 18, color: '#9ca3af', padding: 4 },
+  title: { fontSize: 18, fontWeight: '700', color: c.text },
+  closeBtn: { fontSize: 18, color: c.textFaint, padding: 4 },
 
   typeToggle: {
     flexDirection: 'row', borderRadius: 12, overflow: 'hidden',
-    backgroundColor: '#f3f4f6', marginBottom: 16,
+    backgroundColor: c.chipBg, marginBottom: 16,
   },
   typeBtn: {
     flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12,
   },
-  typeBtnDebit: { backgroundColor: '#ef4444' },
-  typeBtnCredit: { backgroundColor: '#22c55e' },
-  typeBtnRefund: { backgroundColor: '#14b8a6' },
-  typeBtnInvestment: { backgroundColor: '#6366f1' },
-  typeBtnText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
-  typeBtnTextActive: { color: '#fff' },
+  typeBtnDebit: { backgroundColor: c.danger },
+  typeBtnCredit: { backgroundColor: c.success },
+  typeBtnRefund: { backgroundColor: c.teal },
+  typeBtnInvestment: { backgroundColor: c.primary },
+  typeBtnText: { fontSize: 14, fontWeight: '600', color: c.textMuted },
+  typeBtnTextActive: { color: c.onColor },
 
   field: { marginBottom: 14 },
-  label: { fontSize: 12, fontWeight: '500', color: '#6b7280', marginBottom: 6 },
+  label: { fontSize: 12, fontWeight: '500', color: c.textMuted, marginBottom: 6 },
   input: {
-    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+    borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: '#111827', backgroundColor: '#fff',
+    fontSize: 14, color: c.text, backgroundColor: c.inputBg,
     justifyContent: 'center',
   },
-  inputText: { fontSize: 14, color: '#111827' },
-  inputPlaceholder: { fontSize: 14, color: '#9ca3af' },
+  inputText: { fontSize: 14, color: c.text },
+  inputPlaceholder: { fontSize: 14, color: c.textFaint },
 
   categoryList: {
-    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+    borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
     marginTop: 6, overflow: 'hidden',
   },
   categoryItem: {
     paddingHorizontal: 14, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: '#f3f4f6',
+    borderBottomWidth: 1, borderBottomColor: c.cardBorder,
   },
-  categoryItemActive: { backgroundColor: '#f5f3ff' },
-  categoryItemText: { fontSize: 14, color: '#111827' },
+  categoryItemActive: { backgroundColor: c.chipBg },
+  categoryItemText: { fontSize: 14, color: c.text },
 
   submitBtn: {
-    backgroundColor: '#6366f1', borderRadius: 14,
+    backgroundColor: c.primary, borderRadius: 14,
     paddingVertical: 16, alignItems: 'center', marginTop: 8,
   },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  submitText: { color: c.onColor, fontSize: 16, fontWeight: '700' },
 });

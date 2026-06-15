@@ -1,13 +1,12 @@
 import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
 import VeloraLogoMobile from '@/components/VeloraLogoMobile';
 import GlowStripTabBar from '@/components/GlowStripTabBar';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { theme: c } = useTheme();
 
-  const bg = isDark ? '#0a0a14' : '#ffffff';
+  const bg = c.headerBg;
 
   return (
     <Tabs

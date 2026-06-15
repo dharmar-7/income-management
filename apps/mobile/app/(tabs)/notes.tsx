@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
 import {
@@ -14,6 +14,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import { apiFetch } from '@/lib/api';
 import AppAlert from '@/components/AppAlert';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -90,6 +92,8 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 function SpinField({
   label, value, onDec, onInc,
 }: { label: string; value: string; onDec: () => void; onInc: () => void }) {
+  const { theme: c } = useTheme();
+  const dtStyles = useMemo(() => makeDtStyles(c), [c]);
   return (
     <View style={dtStyles.spinField}>
       <Text style={dtStyles.spinLabel}>{label}</Text>
@@ -112,6 +116,8 @@ function DateTimePickerModal({
   onConfirm: (d: Date | null) => void;
   onDismiss: () => void;
 }) {
+  const { theme: c } = useTheme();
+  const dtStyles = useMemo(() => makeDtStyles(c), [c]);
   const now = new Date();
   const [day,  setDay]  = useState(now.getDate());
   const [mon,  setMon]  = useState(now.getMonth());
@@ -140,7 +146,7 @@ function DateTimePickerModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
-      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} onPress={onDismiss} />
+      <Pressable style={{ flex: 1, backgroundColor: c.overlay }} onPress={onDismiss} />
       <View style={dtStyles.container}>
         <View style={dtStyles.handle} />
         <Text style={dtStyles.title}>Set Reminder</Text>
@@ -207,6 +213,8 @@ function PasswordModal({
   onClose: () => void;
   onConfirm: (password: string) => Promise<void>;
 }) {
+  const { theme: c } = useTheme();
+  const passStyles = useMemo(() => makePassStyles(c), [c]);
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ title: string; msg: string } | null>(null);
@@ -248,7 +256,7 @@ function PasswordModal({
                 value={password}
                 onChangeText={setPassword}
                 placeholder={placeholder}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={c.textFaint}
                 secureTextEntry
                 style={passStyles.input}
                 autoFocus
@@ -265,7 +273,7 @@ function PasswordModal({
                   style={[passStyles.confirmBtn, loading && { opacity: 0.6 }]}
                 >
                   {loading
-                    ? <ActivityIndicator color="#fff" size="small" />
+                    ? <ActivityIndicator color={c.contrastText} size="small" />
                     : <Text style={passStyles.confirmText}>
                         {mode === 'set' ? 'Lock' : mode === 'remove' ? 'Remove' : 'Open'}
                       </Text>
@@ -300,6 +308,9 @@ function NoteSheet({
   onLockToggle?: () => void;
 }) {
   const { getToken } = useAuth();
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
+  const markdownStyles = useMemo(() => makeMarkdownStyles(c), [c]);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const [title,    setTitle]   = useState('');
@@ -494,7 +505,7 @@ function NoteSheet({
                 value={title}
                 onChangeText={setTitle}
                 placeholder="Title"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={c.textFaint}
                 style={styles.sheetTitle}
               />
               <TouchableOpacity onPress={() => setPreview(p => !p)} style={styles.previewBtn}>
@@ -524,7 +535,7 @@ function NoteSheet({
                   value={content}
                   onChangeText={setContent}
                   placeholder={'Write your note...\n\nTip: - [ ] for checklist\n**bold**  *italic*  # Heading'}
-                  placeholderTextColor="#9ca3af"
+                  placeholderTextColor={c.textFaint}
                   multiline
                   style={styles.contentInput}
                   textAlignVertical="top"
@@ -541,7 +552,7 @@ function NoteSheet({
                         style={styles.deleteImageBtn}
                         onPress={() => handleDeleteImage(img.id)}
                       >
-                        <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>✕</Text>
+                        <Text style={{ color: c.onColor, fontSize: 10, fontWeight: '700' }}>✕</Text>
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -593,7 +604,7 @@ function NoteSheet({
                     onChangeText={setTagInput}
                     onSubmitEditing={addTag}
                     placeholder="+ tag"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={c.textFaint}
                     style={styles.tagInput}
                     returnKeyType="done"
                   />
@@ -622,7 +633,7 @@ function NoteSheet({
                   onPress={() => setShowReminderPicker(true)}
                   style={[styles.tagInput, styles.reminderBtn]}
                 >
-                  <Text style={[styles.reminderBtnText, !reminderAt && { color: '#9ca3af' }]}>
+                  <Text style={[styles.reminderBtnText, !reminderAt && { color: c.textFaint }]}>
                     {reminderAt
                       ? reminderAt.toLocaleString('en-IN', {
                           day: 'numeric', month: 'short', year: 'numeric',
@@ -636,7 +647,7 @@ function NoteSheet({
                       onPress={() => setReminderAt(null)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text style={{ color: '#9ca3af', fontSize: 13 }}>✕</Text>
+                      <Text style={{ color: c.textFaint, fontSize: 13 }}>✕</Text>
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>
@@ -675,7 +686,7 @@ function NoteSheet({
                   style={[styles.saveBtn, saving && { opacity: 0.6 }]}
                 >
                   {saving
-                    ? <ActivityIndicator color="#fff" />
+                    ? <ActivityIndicator color={c.contrastText} />
                     : <Text style={styles.saveBtnText}>Save</Text>
                   }
                 </TouchableOpacity>
@@ -728,6 +739,8 @@ function NoteSheet({
 
 export default function NotesScreen() {
   const { getToken } = useAuth();
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [activeTag, setActiveTag] = useState('');
@@ -904,12 +917,12 @@ export default function NotesScreen() {
           value={search}
           onChangeText={setSearch}
           placeholder="Search notes…"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={c.textFaint}
           style={styles.searchInput}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch('')}>
-            <Text style={{ color: '#9ca3af', fontSize: 14 }}>✕</Text>
+            <Text style={{ color: c.textFaint, fontSize: 14 }}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -942,7 +955,7 @@ export default function NotesScreen() {
 
       {/* Notes grid */}
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 48 }} color="#6366f1" />
+        <ActivityIndicator style={{ marginTop: 48 }} color={c.primary} />
       ) : notes.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📝</Text>
@@ -989,49 +1002,49 @@ export default function NotesScreen() {
 
 // ─── Markdown styles ────────────────────────────────────────────────────────────
 
-const markdownStyles = StyleSheet.create({
-  body: { fontSize: 14, color: '#374151', lineHeight: 22 },
-  heading1: { fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 8 },
-  heading2: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  heading3: { fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 4 },
+const makeMarkdownStyles = (c: Theme) => StyleSheet.create({
+  body: { fontSize: 14, color: c.text, lineHeight: 22 },
+  heading1: { fontSize: 20, fontWeight: '700', color: c.text, marginBottom: 8 },
+  heading2: { fontSize: 17, fontWeight: '700', color: c.text, marginBottom: 6 },
+  heading3: { fontSize: 15, fontWeight: '600', color: c.text, marginBottom: 4 },
   strong: { fontWeight: '700' },
   em: { fontStyle: 'italic' },
   bullet_list: { marginVertical: 4 },
   ordered_list: { marginVertical: 4 },
   list_item: { marginVertical: 2 },
-  blockquote: { borderLeftWidth: 3, borderLeftColor: '#d1d5db', paddingLeft: 12, color: '#6b7280' },
-  code_inline: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', backgroundColor: '#f3f4f6', paddingHorizontal: 4, borderRadius: 4 },
+  blockquote: { borderLeftWidth: 3, borderLeftColor: c.cardBorder, paddingLeft: 12, color: c.textMuted },
+  code_inline: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', backgroundColor: c.chipBg, paddingHorizontal: 4, borderRadius: 4 },
 });
 
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
+const makeStyles = (c: Theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
 
   searchRow: {
     flexDirection: 'row', alignItems: 'center',
     margin: 12, marginBottom: 8,
-    backgroundColor: '#fff', borderRadius: 99,
-    borderWidth: 1, borderColor: '#e5e7eb',
+    backgroundColor: c.inputBg, borderRadius: 99,
+    borderWidth: 1, borderColor: c.inputBorder,
     paddingHorizontal: 12, paddingVertical: 10,
   },
   searchIcon: { fontSize: 14, marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#111827' },
+  searchInput: { flex: 1, fontSize: 14, color: c.text },
 
   tagBar: { paddingHorizontal: 12, marginBottom: 4 },
   tagBarChip: {
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99,
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb', marginRight: 8,
+    backgroundColor: c.chipBg, borderWidth: 1, borderColor: c.chipBorder, marginRight: 8,
   },
-  tagBarChipActive: { backgroundColor: '#111827', borderColor: '#111827' },
-  tagBarChipText: { fontSize: 12, color: '#6b7280' },
-  tagBarChipTextActive: { color: '#fff' },
+  tagBarChipActive: { backgroundColor: c.contrast, borderColor: c.contrast },
+  tagBarChipText: { fontSize: 12, color: c.textMuted },
+  tagBarChipTextActive: { color: c.contrastText },
 
   archiveRow: { paddingHorizontal: 14, marginBottom: 4 },
-  archiveToggle: { fontSize: 12, color: '#6b7280' },
+  archiveToggle: { fontSize: 12, color: c.textMuted },
 
   grid: { padding: 10, paddingBottom: 100 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', color: '#9ca3af', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', color: c.textFaint, letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
   columns: { flexDirection: 'row', gap: 10 },
   column: { flex: 1 },
 
@@ -1049,35 +1062,35 @@ const styles = StyleSheet.create({
 
   emptyContainer: { flex: 1, alignItems: 'center', paddingTop: 80 },
   emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyText: { fontSize: 16, fontWeight: '600', color: '#6b7280' },
-  emptyHint: { fontSize: 13, color: '#9ca3af', marginTop: 6 },
+  emptyText: { fontSize: 16, fontWeight: '600', color: c.textMuted },
+  emptyHint: { fontSize: 13, color: c.textFaint, marginTop: 6 },
 
   fab: {
     position: 'absolute', bottom: 104, right: 20,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#6366f1', shadowOffset: { width: 0, height: 4 },
+    backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center',
+    shadowColor: c.primary, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
-  fabText: { color: '#fff', fontSize: 26, lineHeight: 28, fontWeight: '300' },
+  fabText: { color: c.onColor, fontSize: 26, lineHeight: 28, fontWeight: '300' },
 
   // Sheet
   modalRoot: { flex: 1 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  backdrop: { flex: 1, backgroundColor: c.overlay },
   sheet: {
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 12, maxHeight: '92%',
   },
-  handle: { width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
+  handle: { width: 40, height: 4, backgroundColor: c.inputBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
-  sheetTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#111827' },
-  previewBtn: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  previewBtnText: { fontSize: 11, color: '#6b7280' },
-  closeBtn: { fontSize: 18, color: '#9ca3af', padding: 4 },
+  sheetTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: c.text },
+  previewBtn: { borderWidth: 1, borderColor: c.inputBorder, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  previewBtnText: { fontSize: 11, color: c.textMuted },
+  closeBtn: { fontSize: 18, color: c.textFaint, padding: 4 },
   previewContainer: { minHeight: 120, marginBottom: 12 },
-  emptyPreview: { color: '#9ca3af', fontSize: 14 },
+  emptyPreview: { color: c.textFaint, fontSize: 14 },
   contentInput: {
-    fontSize: 14, color: '#111827', minHeight: 150,
+    fontSize: 14, color: c.text, minHeight: 150,
     lineHeight: 22, marginBottom: 12,
   },
   imagesRow: { marginBottom: 12 },
@@ -1086,11 +1099,11 @@ const styles = StyleSheet.create({
   deleteImageBtn: {
     position: 'absolute', top: -4, right: -4,
     width: 18, height: 18, borderRadius: 9,
-    backgroundColor: '#ef4444', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: c.danger, alignItems: 'center', justifyContent: 'center',
   },
 
   toolRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  toolLabel: { fontSize: 12, color: '#6b7280', width: 58 },
+  toolLabel: { fontSize: 12, color: c.textMuted, width: 58 },
 
   bgBlob1: { position: 'absolute', top: -120, left: -80,  width: 380, height: 380, borderRadius: 190, backgroundColor: 'rgba(139,92,246,0.45)' },
   bgBlob2: { position: 'absolute', top: 280,  right: -80, width: 340, height: 340, borderRadius: 170, backgroundColor: 'rgba(236,72,153,0.38)' },
@@ -1098,79 +1111,79 @@ const styles = StyleSheet.create({
 
   colorRow: { flexDirection: 'row', gap: 8, paddingRight: 8 },
   colorDot: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.1)', overflow: 'hidden' },
-  colorDotActive: { borderWidth: 3, borderColor: '#374151' },
+  colorDotActive: { borderWidth: 3, borderColor: c.text },
   colorDotMirror: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(160,160,160,0.6)', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
   mirrorDotInner: { flex: 1, flexDirection: 'row', flexWrap: 'wrap' },
   mirrorQ: { width: '50%', height: '50%' },
 
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
-  tagChip: { backgroundColor: '#f3f4f6', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  tagChipText: { fontSize: 12, color: '#374151' },
-  tagInput: { fontSize: 13, color: '#111827', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  tagSuggestions: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 8, overflow: 'hidden' },
-  tagSuggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  tagSuggestionText: { fontSize: 13, color: '#374151' },
+  tagChip: { backgroundColor: c.chipBg, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  tagChipText: { fontSize: 12, color: c.text },
+  tagInput: { fontSize: 13, color: c.text, borderWidth: 1, borderColor: c.inputBorder, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  tagSuggestions: { backgroundColor: c.card, borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12, marginBottom: 8, overflow: 'hidden' },
+  tagSuggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.cardBorder },
+  tagSuggestionText: { fontSize: 13, color: c.text },
 
   reminderBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
-  reminderBtnText: { fontSize: 13, color: '#111827', flex: 1 },
+  reminderBtnText: { fontSize: 13, color: c.text, flex: 1 },
 
-  sheetActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
+  sheetActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.cardBorder },
   deleteBtn: { paddingHorizontal: 14, paddingVertical: 10 },
-  deleteBtnText: { color: '#9ca3af', fontSize: 14 },
+  deleteBtnText: { color: c.textFaint, fontSize: 14 },
   lockBtn: { paddingHorizontal: 12, paddingVertical: 10 },
-  lockBtnText: { fontSize: 13, color: '#6b7280' },
-  saveBtn: { backgroundColor: '#111827', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 10, marginLeft: 'auto' },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  lockBtnText: { fontSize: 13, color: c.textMuted },
+  saveBtn: { backgroundColor: c.contrast, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 10, marginLeft: 'auto' },
+  saveBtnText: { color: c.contrastText, fontSize: 14, fontWeight: '700' },
 
   cardLockBadge: { fontSize: 10, color: '#9ca3af', marginBottom: 2 },
 });
 
 // ─── Password modal styles ───────────────────────────────────────────────────────
 
-const passStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 },
-  box: { backgroundColor: '#fff', borderRadius: 20, padding: 24 },
-  title: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8, textAlign: 'center' },
-  hint: { fontSize: 13, color: '#6b7280', marginBottom: 12, textAlign: 'center', lineHeight: 18 },
+const makePassStyles = (c: Theme) => StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: c.overlay, justifyContent: 'center', padding: 24 },
+  box: { backgroundColor: c.card, borderRadius: 20, padding: 24 },
+  title: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 8, textAlign: 'center' },
+  hint: { fontSize: 13, color: c.textMuted, marginBottom: 12, textAlign: 'center', lineHeight: 18 },
   input: {
-    borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+    borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: '#111827', marginBottom: 16,
+    fontSize: 14, color: c.text, marginBottom: 16,
   },
   actions: { flexDirection: 'row', gap: 10 },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  cancelText: { color: '#6b7280', fontWeight: '600', fontSize: 14 },
-  confirmBtn: { flex: 1, backgroundColor: '#111827', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  confirmText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  cancelBtn: { flex: 1, borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  cancelText: { color: c.textMuted, fontWeight: '600', fontSize: 14 },
+  confirmBtn: { flex: 1, backgroundColor: c.contrast, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  confirmText: { color: c.contrastText, fontWeight: '700', fontSize: 14 },
 });
 
 // ─── DateTimePicker styles ────────────────────────────────────────────────────────
 
-const dtStyles = StyleSheet.create({
+const makeDtStyles = (c: Theme) => StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     paddingHorizontal: 24, paddingTop: 12, paddingBottom: 36,
     shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12, shadowRadius: 16, elevation: 16,
   },
-  handle: { width: 40, height: 4, backgroundColor: '#e5e7eb', borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
-  title: { fontSize: 17, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 24 },
+  handle: { width: 40, height: 4, backgroundColor: c.inputBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 18 },
+  title: { fontSize: 17, fontWeight: '700', color: c.text, textAlign: 'center', marginBottom: 24 },
   row: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 },
   spinField: { alignItems: 'center', flex: 1 },
-  spinLabel: { fontSize: 10, fontWeight: '700', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 6, textTransform: 'uppercase' },
+  spinLabel: { fontSize: 10, fontWeight: '700', color: c.textFaint, letterSpacing: 0.8, marginBottom: 6, textTransform: 'uppercase' },
   spinBtn: { paddingVertical: 6, paddingHorizontal: 16 },
-  spinArrow: { fontSize: 18, color: '#6366f1', fontWeight: '700' },
-  spinValue: { fontSize: 22, fontWeight: '700', color: '#111827', textAlign: 'center', minWidth: 52, paddingVertical: 6 },
+  spinArrow: { fontSize: 18, color: c.primary, fontWeight: '700' },
+  spinValue: { fontSize: 22, fontWeight: '700', color: c.text, textAlign: 'center', minWidth: 52, paddingVertical: 6 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   clearBtn: {
     flex: 1, paddingVertical: 14, borderRadius: 14,
-    borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center',
+    borderWidth: 1, borderColor: c.inputBorder, alignItems: 'center',
   },
-  clearText: { color: '#6b7280', fontWeight: '600', fontSize: 14 },
+  clearText: { color: c.textMuted, fontWeight: '600', fontSize: 14 },
   confirmBtn: {
     flex: 2, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: '#6366f1', alignItems: 'center',
+    backgroundColor: c.primary, alignItems: 'center',
   },
-  confirmText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  confirmText: { color: c.onColor, fontWeight: '700', fontSize: 15 },
 });

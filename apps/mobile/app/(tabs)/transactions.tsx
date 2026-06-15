@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
 import {
@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 import AddTransactionSheet from '@/components/AddTransactionSheet';
 import AppAlert from '@/components/AppAlert';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 // ─── Debounce hook — same concept as the web app ─────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -57,6 +59,8 @@ function formatDate(dateStr: string) {
 }
 
 export default function TransactionsScreen() {
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -140,7 +144,7 @@ export default function TransactionsScreen() {
           onChangeText={setSearchInput}
           placeholder="Search merchant..."
           style={styles.searchInput}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={c.textFaint}
         />
         {searchInput.length > 0 && (
           <TouchableOpacity onPress={() => setSearchInput('')} style={styles.clearBtn}>
@@ -189,7 +193,7 @@ export default function TransactionsScreen() {
       )}
 
       {isLoading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color="#111827" />
+        <ActivityIndicator style={{ marginTop: 40 }} color={c.text} />
       ) : (
         <FlatList
           data={data?.data ?? []}
@@ -311,43 +315,43 @@ export default function TransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
+const makeStyles = (c: Theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     margin: 12,
     marginBottom: 8,
-    backgroundColor: '#fff',
+    backgroundColor: c.card,
     borderRadius: 99,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: c.inputBorder,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   searchIcon: { fontSize: 14, marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, color: '#111827' },
+  searchInput: { flex: 1, fontSize: 14, color: c.text },
   clearBtn: { padding: 4 },
-  clearBtnText: { color: '#9ca3af', fontSize: 14 },
+  clearBtnText: { color: c.textFaint, fontSize: 14 },
 
   filterRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginBottom: 4 },
   chips: { flex: 1 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 99,
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb',
+    backgroundColor: c.card, borderWidth: 1, borderColor: c.inputBorder,
   },
-  chipActive: { backgroundColor: '#111827', borderColor: '#111827' },
-  chipText: { fontSize: 13, color: '#6b7280' },
-  chipTextActive: { color: '#fff' },
+  chipActive: { backgroundColor: c.contrast, borderColor: c.contrast },
+  chipText: { fontSize: 13, color: c.textMuted },
+  chipTextActive: { color: c.contrastText },
   sortBtn: { paddingHorizontal: 10, paddingVertical: 6 },
-  sortBtnText: { fontSize: 12, color: '#6b7280', fontWeight: '500' },
+  sortBtnText: { fontSize: 12, color: c.textMuted, fontWeight: '500' },
 
-  countText: { fontSize: 12, color: '#9ca3af', paddingHorizontal: 16, paddingVertical: 4 },
+  countText: { fontSize: 12, color: c.textFaint, paddingHorizontal: 16, paddingVertical: 4 },
 
   list: { paddingHorizontal: 12, paddingBottom: 20 },
   row: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 8, gap: 12,
+    backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 8, gap: 12,
     shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 4, shadowOffset: { width: 0, height: 1 },
   },
   iconBox: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
@@ -357,22 +361,22 @@ const styles = StyleSheet.create({
   iconBoxInvestment: { backgroundColor: '#eef2ff' },
   icon: { fontSize: 18 },
   rowBody: { flex: 1 },
-  merchant: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  meta: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
-  note: { fontSize: 11, color: '#6b7280', marginTop: 3, fontStyle: 'italic' },
+  merchant: { fontSize: 14, fontWeight: '600', color: c.text },
+  meta: { fontSize: 12, color: c.textFaint, marginTop: 2 },
+  note: { fontSize: 11, color: c.textMuted, marginTop: 3, fontStyle: 'italic' },
   amountCol: { alignItems: 'flex-end' },
-  amount: { fontSize: 14, fontWeight: '700', color: '#111827' },
-  credit: { color: '#16a34a' },
+  amount: { fontSize: 14, fontWeight: '700', color: c.text },
+  credit: { color: c.successDeep },
   refund: { color: '#0d9488' },
-  investment: { color: '#4f46e5' },
-  typeLabel: { fontSize: 10, color: '#9ca3af', marginTop: 2 },
+  investment: { color: c.primaryDeep },
+  typeLabel: { fontSize: 10, color: c.textFaint, marginTop: 2 },
 
   merchantRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
   manualBadge: {
     backgroundColor: '#f5f3ff', borderWidth: 1, borderColor: '#ede9fe',
     borderRadius: 99, paddingHorizontal: 6, paddingVertical: 1,
   },
-  manualBadgeText: { fontSize: 10, color: '#7c3aed', fontWeight: '600' },
+  manualBadgeText: { fontSize: 10, color: c.violet, fontWeight: '600' },
   refundBadge: {
     backgroundColor: '#f0fdfa', borderWidth: 1, borderColor: '#ccfbf1',
     borderRadius: 99, paddingHorizontal: 6, paddingVertical: 1,
@@ -387,26 +391,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#eef2ff', borderWidth: 1, borderColor: '#e0e7ff',
     borderRadius: 99, paddingHorizontal: 6, paddingVertical: 1,
   },
-  investmentBadgeText: { fontSize: 10, color: '#4f46e5', fontWeight: '600' },
+  investmentBadgeText: { fontSize: 10, color: c.primaryDeep, fontWeight: '600' },
   deleteBtn: { fontSize: 16, marginTop: 2 },
 
   fab: {
     position: 'absolute', bottom: 104, right: 20,
     width: 52, height: 52, borderRadius: 26,
-    backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#6366f1', shadowOffset: { width: 0, height: 4 },
+    backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center',
+    shadowColor: c.primary, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
-  fabText: { color: '#fff', fontSize: 26, lineHeight: 28, fontWeight: '300' },
+  fabText: { color: c.onColor, fontSize: 26, lineHeight: 28, fontWeight: '300' },
 
   emptyContainer: { alignItems: 'center', paddingVertical: 48 },
   emptyIcon: { fontSize: 32, marginBottom: 8 },
-  emptyText: { textAlign: 'center', color: '#6b7280', fontSize: 15, fontWeight: '600' },
-  emptyHint: { textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 4 },
+  emptyText: { textAlign: 'center', color: c.textMuted, fontSize: 15, fontWeight: '600' },
+  emptyHint: { textAlign: 'center', color: c.textFaint, fontSize: 13, marginTop: 4 },
 
   pagination: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16 },
-  pageBtn: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#fff', borderRadius: 99, borderWidth: 1, borderColor: '#e5e7eb' },
+  pageBtn: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: c.card, borderRadius: 99, borderWidth: 1, borderColor: c.inputBorder },
   pageBtnDisabled: { opacity: 0.4 },
-  pageBtnText: { fontSize: 13, color: '#374151' },
-  pageInfo: { fontSize: 13, color: '#9ca3af' },
+  pageBtnText: { fontSize: 13, color: c.text },
+  pageInfo: { fontSize: 13, color: c.textFaint },
 });

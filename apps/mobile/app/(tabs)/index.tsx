@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import {
@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { apiFetch } from '@/lib/api';
 import CashSheet from '@/components/CashSheet';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,6 +89,8 @@ const CHART_COLORS = [
 // ─── Dashboard Screen ─────────────────────────────────────────────────────────
 
 export default function DashboardScreen() {
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const { getToken } = useAuth();
   const { user } = useUser();
   const router = useRouter();
@@ -191,13 +195,13 @@ export default function DashboardScreen() {
         ) : s ? (
           <>
             <View style={styles.cardsRow}>
-              <SummaryCard label="Income" value={formatINR(s.totalIncome)} color="#ffffff" bg="#10b981" />
-              <SummaryCard label="Expenses" value={formatINR(s.totalExpenses)} color="#ffffff" bg="#f43f5e" />
+              <SummaryCard label="Income" value={formatINR(s.totalIncome)} color={c.onColor} bg="#10b981" />
+              <SummaryCard label="Expenses" value={formatINR(s.totalExpenses)} color={c.onColor} bg="#f43f5e" />
               <SummaryCard
                 label="Savings"
                 value={formatINR(s.netSavings)}
-                color="#ffffff"
-                bg={s.netSavings >= 0 ? '#6366f1' : '#f97316'}
+                color={c.onColor}
+                bg={s.netSavings >= 0 ? c.primary : c.orange}
               />
             </View>
 
@@ -205,8 +209,8 @@ export default function DashboardScreen() {
             {(s.totalIncome > 0 || s.totalExpenses > 0) && (
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Income vs Expenses</Text>
-                <BarRow label="Income" amount={s.totalIncome} max={Math.max(s.totalIncome, s.totalExpenses)} color="#22c55e" />
-                <BarRow label="Expenses" amount={s.totalExpenses} max={Math.max(s.totalIncome, s.totalExpenses)} color="#ef4444" />
+                <BarRow label="Income" amount={s.totalIncome} max={Math.max(s.totalIncome, s.totalExpenses)} color={c.success} />
+                <BarRow label="Expenses" amount={s.totalExpenses} max={Math.max(s.totalIncome, s.totalExpenses)} color={c.danger} />
               </View>
             )}
           </>
@@ -242,7 +246,7 @@ export default function DashboardScreen() {
           const sv = savingsQuery.data!;
           const isGain = sv.totalGainLoss >= 0;
           return (
-            <View style={[styles.cashCard, { backgroundColor: '#6366f1', shadowColor: '#6366f1' }]}>
+            <View style={[styles.cashCard, { backgroundColor: c.primary, shadowColor: c.primary }]}>
               <View style={styles.cashHeader}>
                 <View>
                   <Text style={styles.cashLabel}>📊 Investments</Text>
@@ -316,8 +320,8 @@ export default function DashboardScreen() {
                 return monthlyQuery.data!.map((m, i) => (
                   <View key={i} style={styles.monthColumn}>
                     <View style={styles.barContainer}>
-                      <View style={[styles.monthBar, { height: `${(m.income / maxVal) * 100}%`, backgroundColor: '#22c55e' }]} />
-                      <View style={[styles.monthBar, { height: `${(m.expenses / maxVal) * 100}%`, backgroundColor: '#ef4444' }]} />
+                      <View style={[styles.monthBar, { height: `${(m.income / maxVal) * 100}%`, backgroundColor: c.success }]} />
+                      <View style={[styles.monthBar, { height: `${(m.expenses / maxVal) * 100}%`, backgroundColor: c.danger }]} />
                     </View>
                     <Text style={styles.monthLabel}>{m.month}</Text>
                   </View>
@@ -326,11 +330,11 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.chartLegend}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#22c55e' }]} />
+                <View style={[styles.legendDot, { backgroundColor: c.success }]} />
                 <Text style={styles.legendSmall}>Income</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#ef4444' }]} />
+                <View style={[styles.legendDot, { backgroundColor: c.danger }]} />
                 <Text style={styles.legendSmall}>Expenses</Text>
               </View>
             </View>
@@ -352,7 +356,7 @@ export default function DashboardScreen() {
             {budgetsQuery.data.data.map(budget => {
               const isOver = budget.percentUsed >= 100;
               const isWarning = budget.percentUsed >= 80 && !isOver;
-              const barColor = isOver ? '#ef4444' : isWarning ? '#eab308' : '#22c55e';
+              const barColor = isOver ? c.danger : isWarning ? c.warning : c.success;
 
               return (
                 <View key={budget.id} style={styles.budgetRow}>
@@ -386,6 +390,8 @@ export default function DashboardScreen() {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SummaryCard({ label, value, color, bg }: { label: string; value: string; color: string; bg: string }) {
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   return (
     <View style={[styles.summaryCard, { backgroundColor: bg }]}>
       <Text style={styles.cardLabel}>{label}</Text>
@@ -395,6 +401,8 @@ function SummaryCard({ label, value, color, bg }: { label: string; value: string
 }
 
 function BarRow({ label, amount, max, color }: { label: string; amount: number; max: number; color: string }) {
+  const { theme: c } = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const pct = max > 0 ? (amount / max) * 100 : 0;
   return (
     <View style={styles.barRow}>
@@ -409,78 +417,78 @@ function BarRow({ label, amount, max, color }: { label: string; amount: number; 
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f9fafb' },
+const makeStyles = (c: Theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.bg },
   scroll: { flex: 1 },
   content: { padding: 16, gap: 12, paddingBottom: 32 },
-  greeting: { fontSize: 22, fontWeight: '700', color: '#111827' },
-  subGreeting: { fontSize: 13, color: '#9ca3af', marginTop: -4 },
-  sectionTitle: { fontSize: 15, fontWeight: '600', color: '#374151', marginTop: 8 },
+  greeting: { fontSize: 22, fontWeight: '700', color: c.text },
+  subGreeting: { fontSize: 13, color: c.textFaint, marginTop: -4 },
+  sectionTitle: { fontSize: 15, fontWeight: '600', color: c.text, marginTop: 8 },
 
   cardsRow: { flexDirection: 'row', gap: 8 },
   summaryCard: { flex: 1, borderRadius: 16, padding: 14, gap: 4, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
   cardLabel: { fontSize: 11, color: 'rgba(255,255,255,0.75)' },
   cardValue: { fontSize: 14, fontWeight: '700' },
 
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#f3f4f6', gap: 10 },
-  cardTitle: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 4 },
+  card: { backgroundColor: c.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: c.cardBorder, gap: 10 },
+  cardTitle: { fontSize: 14, fontWeight: '600', color: c.text, marginBottom: 4 },
 
   // Income vs Expenses bars
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  barLabel: { fontSize: 12, color: '#6b7280', width: 65 },
-  barTrack: { flex: 1, height: 10, backgroundColor: '#f3f4f6', borderRadius: 99, overflow: 'hidden' },
+  barLabel: { fontSize: 12, color: c.textMuted, width: 65 },
+  barTrack: { flex: 1, height: 10, backgroundColor: c.track, borderRadius: 99, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 99 },
-  barAmount: { fontSize: 12, fontWeight: '600', color: '#374151', width: 50, textAlign: 'right' },
+  barAmount: { fontSize: 12, fontWeight: '600', color: c.text, width: 50, textAlign: 'right' },
 
   // Stacked category bar
   stackedBar: { height: 16, borderRadius: 8, overflow: 'hidden', flexDirection: 'row' },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { flex: 1, fontSize: 13, color: '#374151' },
-  legendValue: { fontSize: 13, fontWeight: '600', color: '#111827' },
+  legendLabel: { flex: 1, fontSize: 13, color: c.text },
+  legendValue: { fontSize: 13, fontWeight: '600', color: c.text },
 
   // Monthly bar chart
   monthlyChart: { flexDirection: 'row', alignItems: 'flex-end', height: 100, gap: 4 },
   monthColumn: { flex: 1, alignItems: 'center' },
   barContainer: { width: '100%', height: 80, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 2 },
   monthBar: { width: '40%', borderTopLeftRadius: 3, borderTopRightRadius: 3 },
-  monthLabel: { fontSize: 10, color: '#9ca3af', marginTop: 4 },
+  monthLabel: { fontSize: 10, color: c.textFaint, marginTop: 4 },
   chartLegend: { flexDirection: 'row', gap: 16, marginTop: 8, justifyContent: 'center' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendSmall: { fontSize: 11, color: '#6b7280' },
+  legendSmall: { fontSize: 11, color: c.textMuted },
 
   // Budget rows
   budgetRow: { gap: 6 },
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  budgetName: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  budgetAmount: { fontSize: 12, color: '#9ca3af' },
-  overBudget: { color: '#ef4444', fontWeight: '600' },
-  progressTrack: { height: 6, backgroundColor: '#f3f4f6', borderRadius: 99, overflow: 'hidden' },
+  budgetName: { fontSize: 13, color: c.text, fontWeight: '500' },
+  budgetAmount: { fontSize: 12, color: c.textFaint },
+  overBudget: { color: c.danger, fontWeight: '600' },
+  progressTrack: { height: 6, backgroundColor: c.track, borderRadius: 99, overflow: 'hidden' },
   progressBar: { height: '100%', borderRadius: 99 },
 
   reportsBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: '#e5e7eb',
+    backgroundColor: c.card, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: c.inputBorder,
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
   },
-  reportsBtnText: { fontSize: 15, fontWeight: '600', color: '#374151' },
-  reportsBtnArrow: { fontSize: 22, color: '#9ca3af' },
+  reportsBtnText: { fontSize: 15, fontWeight: '600', color: c.text },
+  reportsBtnArrow: { fontSize: 22, color: c.textFaint },
 
-  emptyText: { fontSize: 13, color: '#9ca3af', textAlign: 'center', paddingVertical: 8 },
+  emptyText: { fontSize: 13, color: c.textFaint, textAlign: 'center', paddingVertical: 8 },
   skeletonRow: { flexDirection: 'row', gap: 8 },
-  skeleton: { flex: 1, height: 72, backgroundColor: '#f3f4f6', borderRadius: 16 },
+  skeleton: { flex: 1, height: 72, backgroundColor: c.track, borderRadius: 16 },
 
   // Cash in Hand card
   cashCard: {
     borderRadius: 16, padding: 16,
-    backgroundColor: '#f97316',
-    shadowColor: '#f97316', shadowOffset: { width: 0, height: 4 },
+    backgroundColor: c.orange,
+    shadowColor: c.orange, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   cashHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cashLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '600', marginBottom: 2 },
-  cashBalance: { fontSize: 26, fontWeight: '700', color: '#fff' },
+  cashBalance: { fontSize: 26, fontWeight: '700', color: c.onColor },
   cashSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   cashBtns: { gap: 8 },
   cashBtn: {
@@ -488,5 +496,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 7,
   },
   cashBtnSpend: { backgroundColor: 'rgba(0,0,0,0.15)' },
-  cashBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  cashBtnText: { color: c.onColor, fontSize: 13, fontWeight: '700' },
 });

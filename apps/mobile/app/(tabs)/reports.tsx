@@ -5,6 +5,8 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
+import { useTheme } from '@/context/ThemeContext';
+import type { Theme } from '@/lib/theme';
 
 interface MonthlyReport {
   month: number;
@@ -46,6 +48,7 @@ function formatINR(n: number) {
 }
 
 export default function ReportsScreen() {
+  const { theme: c } = useTheme();
   const { getToken } = useAuth();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -106,25 +109,25 @@ export default function ReportsScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: '#f9fafb' }}
+      style={{ flex: 1, backgroundColor: c.bg }}
       contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
     >
       {/* Month navigator */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 14,
-        borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 16,
+        backgroundColor: c.card, borderRadius: 16, paddingHorizontal: 20, paddingVertical: 14,
+        borderWidth: 1, borderColor: c.cardBorder, marginBottom: 16,
       }}>
         <TouchableOpacity onPress={prevMonth} style={{ padding: 4 }}>
-          <Text style={{ fontSize: 22, color: '#6366f1', fontWeight: '600' }}>‹</Text>
+          <Text style={{ fontSize: 22, color: c.primary, fontWeight: '600' }}>‹</Text>
         </TouchableOpacity>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>
           {FULL_MONTHS[month - 1]} {year}
         </Text>
         <TouchableOpacity onPress={nextMonth} style={{ padding: 4 }}>
           <Text style={{
             fontSize: 22, fontWeight: '600',
-            color: (month === now.getMonth() + 1 && year === now.getFullYear()) ? '#d1d5db' : '#6366f1',
+            color: (month === now.getMonth() + 1 && year === now.getFullYear()) ? c.textFaint : c.primary,
           }}>›</Text>
         </TouchableOpacity>
       </View>
@@ -135,57 +138,57 @@ export default function ReportsScreen() {
         disabled={!r}
         style={{
           flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-          backgroundColor: r ? '#6366f1' : '#f3f4f6',
+          backgroundColor: r ? c.primary : c.track,
           borderRadius: 14, paddingVertical: 13, marginBottom: 16,
           opacity: r ? 1 : 0.55,
         }}
       >
         <Text style={{ fontSize: 16 }}>↗</Text>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: r ? '#fff' : '#9ca3af' }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: r ? c.onColor : c.textFaint }}>
           {r ? 'Share Report' : 'No data to share'}
         </Text>
       </TouchableOpacity>
 
       {isLoading ? (
-        <ActivityIndicator color="#6366f1" size="large" style={{ marginTop: 48 }} />
+        <ActivityIndicator color={c.primary} size="large" style={{ marginTop: 48 }} />
       ) : r ? (
         <>
           {/* Summary cards */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
-            <SummaryCard label="Income" value={formatINR(r.summary.totalIncome)} bg="#10b981" />
-            <SummaryCard label="Expenses" value={formatINR(r.summary.totalExpenses)} bg="#f43f5e" />
+            <SummaryCard label="Income" value={formatINR(r.summary.totalIncome)} bg={c.success} />
+            <SummaryCard label="Expenses" value={formatINR(r.summary.totalExpenses)} bg={c.danger} />
           </View>
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
             <SummaryCard
               label="Net Savings"
               value={formatINR(r.summary.netSavings)}
-              bg={r.summary.netSavings >= 0 ? '#6366f1' : '#f97316'}
+              bg={r.summary.netSavings >= 0 ? c.primary : c.orange}
             />
-            <SummaryCard label="Transactions" value={String(r.summary.transactionCount)} bg="#0ea5e9" />
+            <SummaryCard label="Transactions" value={String(r.summary.transactionCount)} bg={c.teal} />
           </View>
 
           {/* Top categories */}
           <View style={{
-            backgroundColor: '#fff', borderRadius: 16, padding: 16,
-            borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 16,
+            backgroundColor: c.card, borderRadius: 16, padding: 16,
+            borderWidth: 1, borderColor: c.cardBorder, marginBottom: 16,
           }}>
-            <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15, marginBottom: 14 }}>
+            <Text style={{ fontWeight: '700', color: c.text, fontSize: 15, marginBottom: 14 }}>
               Top Categories
             </Text>
             {r.topCategories.length === 0 ? (
-              <Text style={{ color: '#9ca3af', fontSize: 13 }}>No expense data this month.</Text>
+              <Text style={{ color: c.textFaint, fontSize: 13 }}>No expense data this month.</Text>
             ) : r.topCategories.map((item, i) => (
               <View key={i} style={{ marginBottom: i < r.topCategories.length - 1 ? 14 : 0 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={{ color: '#374151', fontSize: 13 }}>
+                  <Text style={{ color: c.text, fontSize: 13 }}>
                     {item.category.icon} {item.category.name}
-                    <Text style={{ color: '#9ca3af', fontSize: 11 }}> ({item.count}×)</Text>
+                    <Text style={{ color: c.textFaint, fontSize: 11 }}> ({item.count}×)</Text>
                   </Text>
-                  <Text style={{ fontWeight: '700', color: '#111827', fontSize: 13 }}>
+                  <Text style={{ fontWeight: '700', color: c.text, fontSize: 13 }}>
                     {formatINR(item.total)}
                   </Text>
                 </View>
-                <View style={{ height: 7, backgroundColor: '#f3f4f6', borderRadius: 4, overflow: 'hidden' }}>
+                <View style={{ height: 7, backgroundColor: c.track, borderRadius: 4, overflow: 'hidden' }}>
                   <View style={{
                     width: `${(item.total / maxCategory) * 100}%` as any,
                     height: '100%',
@@ -199,37 +202,37 @@ export default function ReportsScreen() {
 
           {/* Top merchants */}
           <View style={{
-            backgroundColor: '#fff', borderRadius: 16, padding: 16,
-            borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 16,
+            backgroundColor: c.card, borderRadius: 16, padding: 16,
+            borderWidth: 1, borderColor: c.cardBorder, marginBottom: 16,
           }}>
-            <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15, marginBottom: 4 }}>
+            <Text style={{ fontWeight: '700', color: c.text, fontSize: 15, marginBottom: 4 }}>
               Top Merchants
             </Text>
             {r.topMerchants.length === 0 ? (
-              <Text style={{ color: '#9ca3af', fontSize: 13, marginTop: 8 }}>No expense data this month.</Text>
+              <Text style={{ color: c.textFaint, fontSize: 13, marginTop: 8 }}>No expense data this month.</Text>
             ) : r.topMerchants.map((item, i) => (
               <View key={i} style={{
                 flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                 paddingVertical: 11,
-                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: '#f3f4f6',
+                borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.cardBorder,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{
                     width: 24, height: 24, borderRadius: 12,
-                    backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: c.track, alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Text style={{ fontSize: 10, fontWeight: '800', color: '#6b7280' }}>{i + 1}</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '800', color: c.textMuted }}>{i + 1}</Text>
                   </View>
                   <View>
-                    <Text style={{ fontWeight: '600', color: '#111827', fontSize: 13 }}>
+                    <Text style={{ fontWeight: '600', color: c.text, fontSize: 13 }}>
                       {item.merchant}
                     </Text>
-                    <Text style={{ color: '#9ca3af', fontSize: 11, marginTop: 1 }}>
+                    <Text style={{ color: c.textFaint, fontSize: 11, marginTop: 1 }}>
                       {item.count} transactions
                     </Text>
                   </View>
                 </View>
-                <Text style={{ fontWeight: '700', color: '#111827', fontSize: 13 }}>
+                <Text style={{ fontWeight: '700', color: c.text, fontSize: 13 }}>
                   {formatINR(item.total)}
                 </Text>
               </View>
@@ -241,10 +244,10 @@ export default function ReportsScreen() {
       {/* Annual overview */}
       {a && (
         <View style={{
-          backgroundColor: '#fff', borderRadius: 16, padding: 16,
-          borderWidth: 1, borderColor: '#f3f4f6', marginBottom: 8,
+          backgroundColor: c.card, borderRadius: 16, padding: 16,
+          borderWidth: 1, borderColor: c.cardBorder, marginBottom: 8,
         }}>
-          <Text style={{ fontWeight: '700', color: '#111827', fontSize: 15, marginBottom: 16 }}>
+          <Text style={{ fontWeight: '700', color: c.text, fontSize: 15, marginBottom: 16 }}>
             {year} Annual Overview
           </Text>
 
@@ -254,11 +257,11 @@ export default function ReportsScreen() {
               <View key={m.month} style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 1 }}>
                 <View style={{
                   flex: 1, height: Math.max((m.income / maxBar) * 72, 2),
-                  backgroundColor: '#10b981', borderRadius: 2,
+                  backgroundColor: c.success, borderRadius: 2,
                 }} />
                 <View style={{
                   flex: 1, height: Math.max((m.expenses / maxBar) * 72, 2),
-                  backgroundColor: '#f43f5e', borderRadius: 2,
+                  backgroundColor: c.danger, borderRadius: 2,
                 }} />
               </View>
             ))}
@@ -269,7 +272,7 @@ export default function ReportsScreen() {
             {a.months.map((m) => (
               <Text key={m.month} style={{
                 flex: 1, textAlign: 'center', fontSize: 9,
-                color: m.month === month ? '#111827' : '#9ca3af',
+                color: m.month === month ? c.text : c.textFaint,
                 fontWeight: m.month === month ? '700' : '400',
               }}>
                 {SHORT_MONTHS[m.month - 1]}
@@ -280,36 +283,36 @@ export default function ReportsScreen() {
           {/* Legend */}
           <View style={{ flexDirection: 'row', gap: 16, marginBottom: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#10b981' }} />
-              <Text style={{ fontSize: 11, color: '#6b7280' }}>Income</Text>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.success }} />
+              <Text style={{ fontSize: 11, color: c.textMuted }}>Income</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#f43f5e' }} />
-              <Text style={{ fontSize: 11, color: '#6b7280' }}>Expenses</Text>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: c.danger }} />
+              <Text style={{ fontSize: 11, color: c.textMuted }}>Expenses</Text>
             </View>
           </View>
 
           {/* Year totals */}
           <View style={{
-            flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 14,
+            flexDirection: 'row', borderTopWidth: 1, borderTopColor: c.cardBorder, paddingTop: 14,
           }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 11, color: '#9ca3af' }}>Total Income</Text>
-              <Text style={{ fontWeight: '700', color: '#10b981', fontSize: 14, marginTop: 2 }}>
+              <Text style={{ fontSize: 11, color: c.textFaint }}>Total Income</Text>
+              <Text style={{ fontWeight: '700', color: c.success, fontSize: 14, marginTop: 2 }}>
                 {formatINR(a.totals.income)}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 11, color: '#9ca3af' }}>Total Expenses</Text>
-              <Text style={{ fontWeight: '700', color: '#f43f5e', fontSize: 14, marginTop: 2 }}>
+              <Text style={{ fontSize: 11, color: c.textFaint }}>Total Expenses</Text>
+              <Text style={{ fontWeight: '700', color: c.danger, fontSize: 14, marginTop: 2 }}>
                 {formatINR(a.totals.expenses)}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 11, color: '#9ca3af' }}>Net Savings</Text>
+              <Text style={{ fontSize: 11, color: c.textFaint }}>Net Savings</Text>
               <Text style={{
                 fontWeight: '700', fontSize: 14, marginTop: 2,
-                color: a.totals.savings >= 0 ? '#6366f1' : '#f97316',
+                color: a.totals.savings >= 0 ? c.primary : c.orange,
               }}>
                 {formatINR(a.totals.savings)}
               </Text>
@@ -322,11 +325,12 @@ export default function ReportsScreen() {
 }
 
 function SummaryCard({ label, value, bg }: { label: string; value: string; bg: string }) {
+  const { theme: c } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: bg, borderRadius: 16, padding: 16 }}>
       <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 11, marginBottom: 4 }}>{label}</Text>
       <Text
-        style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}
+        style={{ color: c.onColor, fontWeight: '800', fontSize: 16 }}
         numberOfLines={1}
         adjustsFontSizeToFit
       >
