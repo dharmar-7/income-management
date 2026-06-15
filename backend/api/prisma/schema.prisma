@@ -153,10 +153,11 @@ enum TransactionType {
 }
 
 enum ImportSource {
-  TAKEOUT  // imported from Google Takeout JSON
-  GMAIL    // synced from Gmail API
-  MANUAL   // uploaded manually by the user
-  SMS      // parsed from bank SMS (Android only)
+  TAKEOUT   // imported from Google Takeout JSON
+  GMAIL     // synced from Gmail API
+  MANUAL    // uploaded manually by the user
+  SMS       // parsed from bank SMS (Android only)
+  STATEMENT // parsed from an uploaded bank statement (PDF/photo)
 }
 
 enum CashFlow {

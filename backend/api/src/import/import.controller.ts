@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Body,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -9,6 +10,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ImportService } from './import.service';
+import { CommitStatementDto } from './dto/commit-statement.dto';
 import { ClerkAuthGuard } from '../auth/clerk.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
@@ -54,6 +56,50 @@ export class ImportController {
 
     return {
       message: `Import complete. ${summary.imported} transactions imported.`,
+      ...summary,
+    };
+  }
+
+  // POST /import/statement/parse
+  // Accepts a bank statement (text PDF or image), extracts transactions, and
+  // returns them for review. Nothing is saved yet.
+  @Post('statement/parse')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 15 * 1024 * 1024 }, // 15MB max
+      fileFilter: (_req, file, callback) => {
+        if (file.mimetype === 'application/pdf' || file.mimetype.startsWith('image/')) {
+          callback(null, true);
+        } else {
+          callback(
+            new BadRequestException('Upload a PDF or an image (PNG/JPG).'),
+            false,
+          );
+        }
+      },
+    }),
+  )
+  async parseStatement(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() userId: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded. Please attach a PDF or image.');
+    }
+    return this.importService.parseStatement(file.buffer, file.mimetype, userId);
+  }
+
+  // POST /import/statement/commit
+  // Saves the rows the user kept after reviewing the parsed statement.
+  @Post('statement/commit')
+  async commitStatement(
+    @Body() dto: CommitStatementDto,
+    @CurrentUser() userId: string,
+  ) {
+    const summary = await this.importService.commitStatement(userId, dto.transactions);
+    return {
+      message: `Imported ${summary.imported} transactions.`,
       ...summary,
     };
   }
