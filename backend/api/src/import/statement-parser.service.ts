@@ -1,9 +1,16 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { TransactionType } from '@prisma/client';
 
-// pdf-parse is CommonJS with no usable ESM default; require it directly.
+// pdf-parse v2 dropped v1's default-function export in favour of a PDFParse class
+// (require('pdf-parse')() throws "pdfParse is not a function"). We require + destructure
+// with an inline type so TypeScript doesn't need the package's "exports" map resolved.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const pdfParse = require('pdf-parse') as (b: Buffer) => Promise<{ text: string }>;
+const { PDFParse } = require('pdf-parse') as {
+  PDFParse: new (opts: { data: Uint8Array; password?: string }) => {
+    getText(): Promise<{ text: string }>;
+    destroy(): Promise<void>;
+  };
+};
 
 export interface ParsedStatementTxn {
   date: string; // YYYY-MM-DD
@@ -67,8 +74,13 @@ export class StatementParserService {
   // ── text extraction ──────────────────────────────────────────────────────────
   private async extractText(buffer: Buffer, mimetype: string): Promise<string> {
     if (mimetype === 'application/pdf') {
-      const data = await pdfParse(buffer);
-      return data.text ?? '';
+      const parser = new PDFParse({ data: buffer });
+      try {
+        const { text } = await parser.getText();
+        return text ?? '';
+      } finally {
+        await parser.destroy().catch(() => {});
+      }
     }
     if (mimetype.startsWith('image/')) {
       const prepped = await this.preprocessImage(buffer);
@@ -234,6 +246,14 @@ export class StatementParserService {
       `Statement parse: ${lines.length} lines, ${datedLines} dated, ` +
       `${datedNoAmount} dated-without-amount, ${txns.length} transactions extracted.`,
     );
+
+    // On a clean miss, log a short, truncated sample of what was actually read so we
+    // can tell garbled OCR from a layout the heuristics don't yet handle. Temporary
+    // debugging aid; the snippet is truncated and only logged when nothing parsed.
+    if (txns.length === 0 && lines.length > 0) {
+      const sample = lines.slice(0, 5).map((l) => l.slice(0, 90)).join('  ⏐  ');
+      this.logger.warn(`No transactions parsed. First lines read: ${sample}`);
+    }
 
     return txns;
   }
