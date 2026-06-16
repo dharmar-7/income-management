@@ -64,3 +64,6 @@ Thumbs.db
 # Logo design scratch (local only)
 /logo-concepts.html
 apps/mobile/scripts/build-logo-gallery.mjs
+
+# Tesseract OCR training data — downloaded at runtime by tesseract.js, never commit
+*.traineddata
