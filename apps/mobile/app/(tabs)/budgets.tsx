@@ -16,6 +16,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { apiFetch } from '@/lib/api';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
+import DatePickerField from '@/components/DatePickerField';
 import { useTheme } from '@/context/ThemeContext';
 import type { Theme } from '@/lib/theme';
 
@@ -214,35 +215,26 @@ function BudgetSheet({
               style={sheet.input}
             />
 
-            {/* Month / Year */}
-            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={sheet.label}>Month (1–12)</Text>
-                <TextInput
-                  value={month}
-                  onChangeText={setMonth}
-                  placeholder="5"
-                  placeholderTextColor={c.textFaint}
-                  keyboardType="number-pad"
-                  style={[sheet.input, isEditing && sheet.inputLocked]}
-                  maxLength={2}
-                  editable={!isEditing}
-                />
+            {/* Month — a month/year picker (locked while editing an existing budget) */}
+            {isEditing ? (
+              <View style={{ marginBottom: 24 }}>
+                <Text style={sheet.label}>Month</Text>
+                <View style={[sheet.input, sheet.inputLocked, { marginBottom: 6, justifyContent: 'center' }]}>
+                  <Text style={{ color: c.textMuted, fontSize: 14 }}>
+                    {MONTHS[Number(month)] ?? month} {year}
+                  </Text>
+                </View>
+                <Text style={sheet.hint}>Month can't be changed when editing.</Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={sheet.label}>Year</Text>
-                <TextInput
-                  value={year}
-                  onChangeText={setYear}
-                  placeholder="2026"
-                  placeholderTextColor={c.textFaint}
-                  keyboardType="number-pad"
-                  style={[sheet.input, isEditing && sheet.inputLocked]}
-                  maxLength={4}
-                  editable={!isEditing}
-                />
-              </View>
-            </View>
+            ) : (
+              <DatePickerField
+                mode="month"
+                label="Month"
+                value={`${year}-${String(month).padStart(2, '0')}`}
+                onChange={(iso) => { setMonth(String(Number(iso.slice(5, 7)))); setYear(iso.slice(0, 4)); }}
+                style={{ marginBottom: 24 }}
+              />
+            )}
 
             <TouchableOpacity
               style={[sheet.submitBtn, busy && { opacity: 0.6 }]}

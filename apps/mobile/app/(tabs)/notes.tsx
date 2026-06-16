@@ -56,6 +56,15 @@ const COLOR_MAP: Record<string, string> = {
 
 const COLOR_KEYS = Object.keys(COLOR_MAP);
 
+// A note is always a LIGHT pastel "paper" regardless of the app's light/dark theme.
+// So text/controls drawn ON the paper use fixed dark ink — using theme tokens here
+// makes the text near-white in dark mode, i.e. invisible on the light note.
+const INK = '#1f2937';
+const INK_MUTED = '#6b7280';
+const INK_FAINT = '#9ca3af';
+const INK_BORDER = 'rgba(0,0,0,0.12)';
+const INK_CHIP = 'rgba(0,0,0,0.06)';
+
 // ─── Notifications setup ─────────────────────────────────────────────────────────
 
 Notifications.setNotificationHandler({
@@ -505,7 +514,7 @@ function NoteSheet({
                 value={title}
                 onChangeText={setTitle}
                 placeholder="Title"
-                placeholderTextColor={c.textFaint}
+                placeholderTextColor={INK_FAINT}
                 style={styles.sheetTitle}
               />
               <TouchableOpacity onPress={() => setPreview(p => !p)} style={styles.previewBtn}>
@@ -535,7 +544,7 @@ function NoteSheet({
                   value={content}
                   onChangeText={setContent}
                   placeholder={'Write your note...\n\nTip: - [ ] for checklist\n**bold**  *italic*  # Heading'}
-                  placeholderTextColor={c.textFaint}
+                  placeholderTextColor={INK_FAINT}
                   multiline
                   style={styles.contentInput}
                   textAlignVertical="top"
@@ -604,7 +613,7 @@ function NoteSheet({
                     onChangeText={setTagInput}
                     onSubmitEditing={addTag}
                     placeholder="+ tag"
-                    placeholderTextColor={c.textFaint}
+                    placeholderTextColor={INK_FAINT}
                     style={styles.tagInput}
                     returnKeyType="done"
                   />
@@ -633,7 +642,7 @@ function NoteSheet({
                   onPress={() => setShowReminderPicker(true)}
                   style={[styles.tagInput, styles.reminderBtn]}
                 >
-                  <Text style={[styles.reminderBtnText, !reminderAt && { color: c.textFaint }]}>
+                  <Text style={[styles.reminderBtnText, !reminderAt && { color: INK_FAINT }]}>
                     {reminderAt
                       ? reminderAt.toLocaleString('en-IN', {
                           day: 'numeric', month: 'short', year: 'numeric',
@@ -647,7 +656,7 @@ function NoteSheet({
                       onPress={() => setReminderAt(null)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text style={{ color: c.textFaint, fontSize: 13 }}>✕</Text>
+                      <Text style={{ color: INK_MUTED, fontSize: 13 }}>✕</Text>
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>
@@ -1002,18 +1011,19 @@ export default function NotesScreen() {
 
 // ─── Markdown styles ────────────────────────────────────────────────────────────
 
-const makeMarkdownStyles = (c: Theme) => StyleSheet.create({
-  body: { fontSize: 14, color: c.text, lineHeight: 22 },
-  heading1: { fontSize: 20, fontWeight: '700', color: c.text, marginBottom: 8 },
-  heading2: { fontSize: 17, fontWeight: '700', color: c.text, marginBottom: 6 },
-  heading3: { fontSize: 15, fontWeight: '600', color: c.text, marginBottom: 4 },
+// Markdown preview renders on the light note paper → fixed dark ink, not theme tokens.
+const makeMarkdownStyles = (_c: Theme) => StyleSheet.create({
+  body: { fontSize: 14, color: INK, lineHeight: 22 },
+  heading1: { fontSize: 20, fontWeight: '700', color: INK, marginBottom: 8 },
+  heading2: { fontSize: 17, fontWeight: '700', color: INK, marginBottom: 6 },
+  heading3: { fontSize: 15, fontWeight: '600', color: INK, marginBottom: 4 },
   strong: { fontWeight: '700' },
   em: { fontStyle: 'italic' },
   bullet_list: { marginVertical: 4 },
   ordered_list: { marginVertical: 4 },
   list_item: { marginVertical: 2 },
-  blockquote: { borderLeftWidth: 3, borderLeftColor: c.cardBorder, paddingLeft: 12, color: c.textMuted },
-  code_inline: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', backgroundColor: c.chipBg, paddingHorizontal: 4, borderRadius: 4 },
+  blockquote: { borderLeftWidth: 3, borderLeftColor: INK_BORDER, paddingLeft: 12, color: INK_MUTED },
+  code_inline: { fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', backgroundColor: INK_CHIP, paddingHorizontal: 4, borderRadius: 4 },
 });
 
 // ─── Styles ─────────────────────────────────────────────────────────────────────
@@ -1081,16 +1091,16 @@ const makeStyles = (c: Theme) => StyleSheet.create({
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 12, maxHeight: '92%',
   },
-  handle: { width: 40, height: 4, backgroundColor: c.inputBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
+  handle: { width: 40, height: 4, backgroundColor: INK_BORDER, borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
   sheetHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
-  sheetTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: c.text },
-  previewBtn: { borderWidth: 1, borderColor: c.inputBorder, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  previewBtnText: { fontSize: 11, color: c.textMuted },
-  closeBtn: { fontSize: 18, color: c.textFaint, padding: 4 },
+  sheetTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: INK },
+  previewBtn: { borderWidth: 1, borderColor: INK_BORDER, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  previewBtnText: { fontSize: 11, color: INK_MUTED },
+  closeBtn: { fontSize: 18, color: INK_MUTED, padding: 4 },
   previewContainer: { minHeight: 120, marginBottom: 12 },
-  emptyPreview: { color: c.textFaint, fontSize: 14 },
+  emptyPreview: { color: INK_FAINT, fontSize: 14 },
   contentInput: {
-    fontSize: 14, color: c.text, minHeight: 150,
+    fontSize: 14, color: INK, minHeight: 150,
     lineHeight: 22, marginBottom: 12,
   },
   imagesRow: { marginBottom: 12 },
@@ -1103,7 +1113,7 @@ const makeStyles = (c: Theme) => StyleSheet.create({
   },
 
   toolRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  toolLabel: { fontSize: 12, color: c.textMuted, width: 58 },
+  toolLabel: { fontSize: 12, color: INK_MUTED, width: 58 },
 
   bgBlob1: { position: 'absolute', top: -120, left: -80,  width: 380, height: 380, borderRadius: 190, backgroundColor: 'rgba(139,92,246,0.45)' },
   bgBlob2: { position: 'absolute', top: 280,  right: -80, width: 340, height: 340, borderRadius: 170, backgroundColor: 'rgba(236,72,153,0.38)' },
@@ -1111,29 +1121,29 @@ const makeStyles = (c: Theme) => StyleSheet.create({
 
   colorRow: { flexDirection: 'row', gap: 8, paddingRight: 8 },
   colorDot: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.1)', overflow: 'hidden' },
-  colorDotActive: { borderWidth: 3, borderColor: c.text },
+  colorDotActive: { borderWidth: 3, borderColor: INK },
   colorDotMirror: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(160,160,160,0.6)', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
   mirrorDotInner: { flex: 1, flexDirection: 'row', flexWrap: 'wrap' },
   mirrorQ: { width: '50%', height: '50%' },
 
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
-  tagChip: { backgroundColor: c.chipBg, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  tagChipText: { fontSize: 12, color: c.text },
-  tagInput: { fontSize: 13, color: c.text, borderWidth: 1, borderColor: c.inputBorder, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  tagSuggestions: { backgroundColor: c.card, borderWidth: 1, borderColor: c.inputBorder, borderRadius: 12, marginBottom: 8, overflow: 'hidden' },
-  tagSuggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.cardBorder },
-  tagSuggestionText: { fontSize: 13, color: c.text },
+  tagChip: { backgroundColor: INK_CHIP, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  tagChipText: { fontSize: 12, color: INK },
+  tagInput: { fontSize: 13, color: INK, borderWidth: 1, borderColor: INK_BORDER, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  tagSuggestions: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: INK_BORDER, borderRadius: 12, marginBottom: 8, overflow: 'hidden' },
+  tagSuggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: INK_BORDER },
+  tagSuggestionText: { fontSize: 13, color: INK },
 
   reminderBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 },
-  reminderBtnText: { fontSize: 13, color: c.text, flex: 1 },
+  reminderBtnText: { fontSize: 13, color: INK, flex: 1 },
 
-  sheetActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.cardBorder },
+  sheetActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: INK_BORDER },
   deleteBtn: { paddingHorizontal: 14, paddingVertical: 10 },
-  deleteBtnText: { color: c.textFaint, fontSize: 14 },
+  deleteBtnText: { color: INK_MUTED, fontSize: 14 },
   lockBtn: { paddingHorizontal: 12, paddingVertical: 10 },
-  lockBtnText: { fontSize: 13, color: c.textMuted },
-  saveBtn: { backgroundColor: c.contrast, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 10, marginLeft: 'auto' },
-  saveBtnText: { color: c.contrastText, fontSize: 14, fontWeight: '700' },
+  lockBtnText: { fontSize: 13, color: INK_MUTED },
+  saveBtn: { backgroundColor: '#1f2937', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 10, marginLeft: 'auto' },
+  saveBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
 
   cardLockBadge: { fontSize: 10, color: '#9ca3af', marginBottom: 2 },
 });

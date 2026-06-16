@@ -14,6 +14,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
+import DatePickerField from '@/components/DatePickerField';
 import { useTheme } from '@/context/ThemeContext';
 import type { Theme } from '@/lib/theme';
 
@@ -181,15 +182,7 @@ export default function CashSheet({ visible, mode, currentBalance, onClose, onSu
             />
 
             {/* Date */}
-            <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
-            <TextInput
-              value={date}
-              onChangeText={setDate}
-              placeholder="2026-05-09"
-              placeholderTextColor={c.textFaint}
-              style={styles.input}
-              maxLength={10}
-            />
+            <DatePickerField label="Date" value={date} onChange={setDate} placeholder="Tap to pick a date" style={{ marginBottom: 16 }} />
 
             {/* Note */}
             <Text style={styles.label}>Note <Text style={{ color: c.textFaint }}>(optional)</Text></Text>

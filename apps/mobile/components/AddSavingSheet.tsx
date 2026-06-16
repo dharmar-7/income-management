@@ -14,6 +14,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { apiFetch } from '@/lib/api';
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import AppAlert from '@/components/AppAlert';
+import DatePickerField from '@/components/DatePickerField';
 import { useTheme } from '@/context/ThemeContext';
 import type { Theme } from '@/lib/theme';
 
@@ -307,30 +308,21 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
         </View>
       </View>
 
-      <View style={[styles.row3, { gap: 8 }]}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Start Date (YYYY-MM-DD)</Text>
-          <TextInput
-            value={startDate}
-            onChangeText={setStartDate}
-            placeholder="2026-01-01"
-            placeholderTextColor={c.textFaint}
-            style={styles.input}
-            maxLength={10}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Maturity Date <Text style={{ color: c.textFaint }}>(optional)</Text></Text>
-          <TextInput
-            value={maturityDate}
-            onChangeText={setMaturityDate}
-            placeholder="2030-01-01"
-            placeholderTextColor={c.textFaint}
-            style={styles.input}
-            maxLength={10}
-          />
-        </View>
-      </View>
+      <DatePickerField
+        label="Start Date"
+        value={startDate}
+        onChange={setStartDate}
+        placeholder="Tap to pick the start date"
+        style={{ marginBottom: 14 }}
+      />
+      <DatePickerField
+        label="Maturity Date (optional)"
+        value={maturityDate}
+        onChange={setMaturityDate}
+        placeholder="Tap to pick (optional)"
+        optional
+        style={{ marginBottom: 14 }}
+      />
 
       {/* Platform picker */}
       {platforms.length > 0 && (
