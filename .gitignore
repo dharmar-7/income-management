@@ -67,3 +67,8 @@ apps/mobile/scripts/build-logo-gallery.mjs
 
 # Tesseract OCR training data — downloaded at runtime by tesseract.js, never commit
 *.traineddata
+
+# Local bank-statement samples used for debugging the parser — NEVER commit financial data
+backend/api/sample*.pdf
+backend/api/sample*.png
+backend/api/sample*.jpg

@@ -39,13 +39,18 @@ export class StatementParserService {
     jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12,
   };
 
-  // Finds the first date-like token in a line (dd-MMM-yy, dd/mm/yyyy, yyyy-mm-dd…).
-  // Separators may be -, /, or a space — OCR frequently turns "14-Jun-26" into
-  // "14 Jun 26", so spaces are accepted too.
-  private readonly DATE_FIND =
-    /\b(\d{1,2}[-/ ][A-Za-z]{3,4}[-/ ]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})\b/;
-  // Money: requires commas (1,234) or 2 decimals (1234.56) so it never matches dates/refs.
-  private readonly AMOUNT_FIND = /\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d+\.\d{2}/g;
+  // A transaction date at the START of a line (dd-MMM-yy). Separators may be -, /, or a
+  // space — OCR frequently turns "14-Jun-26" into "14 Jun 26".
+  private readonly DATE_LEAD = /^(\d{1,2}[-/ ][A-Za-z]{3,4}[-/ ]\d{2,4})\b/;
+  // A bracketed value-date at the start of a line, e.g. "(14-Jun-26)".
+  private readonly VDATE_LEAD = /^\((\d{1,2}[-/ ][A-Za-z]{3,4}[-/ ]\d{2,4})\)\s*/;
+  // A trailing run of ≥2 amount "cells" — money (1234.56 / 1,234.56) or a "-" placeholder
+  // for the empty debit/credit column, e.g. "- 6.00 7,948.80" or "100.00 - 7,942.80".
+  private readonly AMOUNTS_TAIL =
+    /((?:-|\d[\d,]*\.\d{2})(?:\s+(?:-|\d[\d,]*\.\d{2}))+)\s*$/;
+  // Lines that are headers/footers/totals, never transaction rows.
+  private readonly SKIP_LINE =
+    /(opening balance|closing balance|statement of|account (no|holder|number)|customer id|ifsc|ifs code|branch (address|code)|contact no|email id|page \d+ of|effective available|computer generated|report generation|^particulars\b|transaction\s*type|debit\(rs\))/i;
 
   async parse(buffer: Buffer, mimetype: string): Promise<ParsedStatementTxn[]> {
     const text = await this.extractText(buffer, mimetype);
@@ -162,6 +167,16 @@ export class StatementParserService {
   }
 
   // ── row parsing ──────────────────────────────────────────────────────────────
+  // Indian bank statements (and their pdf-parse output) spread one transaction across
+  // several lines:
+  //     14-Jun-26                                          ← date
+  //     (14-Jun-26)                                        ← value date
+  //     UPI/103481250943/CR/ NPCI BHIM                     ← particulars
+  //     /HDF/BHIMCASHB S46063125 Transfer - 6.00 7,948.80  ← …Ref Type Debit Credit Balance
+  // We walk the lines holding the current date and an accumulating particulars buffer,
+  // and emit when a line ends in the amount columns. Exactly one of the debit/credit
+  // cells is a number (the other is "-"), which gives the direction. The same logic
+  // also handles single-line rows (e.g. OCR output) that share one line.
   private parseRows(text: string): ParsedStatementTxn[] {
     const lines = text
       .split(/\r?\n/)
@@ -169,92 +184,117 @@ export class StatementParserService {
       .filter(Boolean);
 
     const txns: ParsedStatementTxn[] = [];
+    let currentDate: string | null = null;
+    let buf: string[] = []; // particulars accumulated since the date line
     let prevBalance: number | null = null;
+    let dateLines = 0;
 
-    // Diagnostics (counts only, never the statement contents) so a "0 transactions"
-    // failure tells us WHY in the logs: garbled OCR (few dated lines) vs. scattered
-    // columns (dated lines but no amounts on them).
-    let datedLines = 0;
-    let datedNoAmount = 0;
+    const desc = () => buf.join(' ').replace(/\s+/g, ' ').trim();
 
-    for (const line of lines) {
-      const lower = line.toLowerCase();
-      // Skip headers / summaries / footers that aren't transaction rows.
-      if (/(opening balance|closing balance|statement|account (no|number)|ifsc|branch|page \d+ of|^date\b)/.test(lower)) {
-        continue;
+    for (const raw of lines) {
+      let line = raw;
+
+      // Strip a leading transaction date — it starts a new record.
+      const dm = this.DATE_LEAD.exec(line);
+      if (dm) {
+        const iso = this.parseDate(dm[1]);
+        if (iso) { currentDate = iso; buf = []; dateLines++; line = line.slice(dm[0].length).trim(); }
+      }
+      // Strip a leading "(value date)".
+      const vm = this.VDATE_LEAD.exec(line);
+      if (vm) {
+        if (!currentDate) { const iso = this.parseDate(vm[1]); if (iso) currentDate = iso; }
+        line = line.slice(vm[0].length).trim();
+      }
+      if (!line || this.SKIP_LINE.test(line)) continue;
+
+      // Does this line end in the amount columns? If so, it completes a transaction.
+      const am = this.AMOUNTS_TAIL.exec(line);
+      if (am && currentDate) {
+        const cells = am[1].split(/\s+/).filter(Boolean);
+        const balance = this.money(cells[cells.length - 1]);
+        let amount: number | null = null;
+        let type: TransactionType = TransactionType.DEBIT;
+
+        if (balance !== null && cells.length >= 3) {
+          // [debit, credit, balance] — exactly one of debit/credit is a number.
+          const debit = this.money(cells[cells.length - 3]);
+          const credit = this.money(cells[cells.length - 2]);
+          if (debit !== null) { amount = debit; type = TransactionType.DEBIT; }
+          else if (credit !== null) { amount = credit; type = TransactionType.CREDIT; }
+        } else if (balance !== null && cells.length === 2) {
+          // [amount, balance] — direction from a Dr/Cr token, else the running balance.
+          amount = this.money(cells[0]);
+          const drcr = /(?:^|[^A-Za-z])(DR|CR)(?:[^A-Za-z]|$)/i.exec(`${desc()} ${line}`);
+          if (drcr) type = drcr[1].toUpperCase() === 'CR' ? TransactionType.CREDIT : TransactionType.DEBIT;
+          else if (prevBalance !== null) type = balance < prevBalance ? TransactionType.DEBIT : TransactionType.CREDIT;
+        }
+
+        if (amount !== null && amount > 0 && balance !== null) {
+          // Particulars = everything buffered + this line up to the amounts (drop the
+          // trailing transaction-type word).
+          const pre = line.slice(0, am.index).replace(/\b(transfer|upi|neft|imps|rtgs|cash|atm|pos)\b\s*$/i, '').trim();
+          const particulars = `${desc()} ${pre}`.replace(/\s+/g, ' ').trim();
+          if (/[A-Za-z]/.test(particulars)) { // skip the totals row (digits only, no payee)
+            txns.push({
+              date: currentDate,
+              merchant: this.extractMerchant(particulars),
+              amount,
+              type,
+              upiRef: this.extractRef(particulars),
+              balance,
+            });
+            prevBalance = balance;
+            buf = [];
+          }
+        }
+        continue; // amounts line consumed (or totals row ignored) — never buffer it
       }
 
-      const dateMatch = this.DATE_FIND.exec(line);
-      if (!dateMatch) continue;
-      const date = this.parseDate(dateMatch[1]);
-      if (!date) continue;
-      datedLines++;
-
-      const afterDate = line.slice(dateMatch.index + dateMatch[0].length);
-      const amountStrs = afterDate.match(this.AMOUNT_FIND) ?? [];
-      if (amountStrs.length === 0) { datedNoAmount++; continue; }
-      const amounts = amountStrs.map((a) => parseFloat(a.replace(/,/g, '')));
-
-      // Reference number (UPI/cheque) — a long digit/alnum run, used for dedup.
-      // Captured from the raw line BEFORE we scrub numbers out of the merchant.
-      const refMatch = /\b([A-Z]{2,6}\d{6,}|\d{8,})\b/.exec(afterDate);
-      const upiRef = refMatch ? refMatch[1].slice(0, 60) : undefined;
-
-      // Merchant = text between the date and the first amount, cleaned up: drop a
-      // stacked value-date, surrounding parens, rail keywords, long ref/account
-      // numbers, and separators.
-      const firstAmtIdx = afterDate.search(this.AMOUNT_FIND);
-      let merchant = (firstAmtIdx > 0 ? afterDate.slice(0, firstAmtIdx) : afterDate)
-        .replace(this.DATE_FIND, ' ')
-        .replace(/\b(transfer|upi|neft|imps|rtgs|dr|cr|ref|no)\b/gi, ' ')
-        .replace(/\b[a-z]?\d{6,}\b/gi, ' ') // strip ref / account / UPI numbers
-        .replace(/[*|:/\\()]+/g, ' ')
-        .replace(/\s+/g, ' ')
-        .replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '') // trim stray separators
-        .trim();
-      if (!merchant) merchant = 'Bank transaction';
-      merchant = merchant.slice(0, 200);
-
-      // Amount + DEBIT/CREDIT classification.
-      const drcr = /\b(DR|CR)\b/i.exec(line);
-      let amount: number;
-      let balance: number | undefined;
-      let type: TransactionType = TransactionType.DEBIT;
-
-      if (amounts.length >= 2) {
-        balance = amounts[amounts.length - 1];
-        amount = amounts[amounts.length - 2];
-        if (drcr) {
-          type = drcr[1].toUpperCase() === 'CR' ? TransactionType.CREDIT : TransactionType.DEBIT;
-        } else if (prevBalance != null) {
-          // Balance went down → money out (debit); up → money in (credit).
-          type = balance < prevBalance ? TransactionType.DEBIT : TransactionType.CREDIT;
-        }
-        prevBalance = balance;
-      } else {
-        amount = amounts[0];
-        if (drcr) {
-          type = drcr[1].toUpperCase() === 'CR' ? TransactionType.CREDIT : TransactionType.DEBIT;
-        }
-      }
-
-      if (!isFinite(amount) || amount <= 0) continue;
-      txns.push({ date, merchant, amount, type, upiRef, balance });
+      // Otherwise it's a particulars line; accumulate under the current date.
+      if (currentDate) buf.push(line);
     }
 
     this.logger.log(
-      `Statement parse: ${lines.length} lines, ${datedLines} dated, ` +
-      `${datedNoAmount} dated-without-amount, ${txns.length} transactions extracted.`,
+      `Statement parse: ${lines.length} lines, ${dateLines} date-lines, ${txns.length} transactions extracted.`,
     );
-
-    // On a clean miss, log a short, truncated sample of what was actually read so we
-    // can tell garbled OCR from a layout the heuristics don't yet handle. Temporary
-    // debugging aid; the snippet is truncated and only logged when nothing parsed.
     if (txns.length === 0 && lines.length > 0) {
-      const sample = lines.slice(0, 5).map((l) => l.slice(0, 90)).join('  ⏐  ');
+      const sample = lines.slice(0, 6).map((l) => l.slice(0, 90)).join('  ⏐  ');
       this.logger.warn(`No transactions parsed. First lines read: ${sample}`);
     }
 
     return txns;
+  }
+
+  // Parse an Indian-format money cell ("1,234.56"); null for "-" or anything non-money.
+  private money(tok: string): number | null {
+    if (!tok || !/^\d[\d,]*\.\d{2}$/.test(tok)) return null;
+    const n = parseFloat(tok.replace(/,/g, ''));
+    return isFinite(n) ? n : null;
+  }
+
+  // Best-effort payee name from the particulars text.
+  private extractMerchant(p: string): string {
+    let m = /\/(?:DR|CR)\/\s*([^/]+?)\s*\//i.exec(p); // UPI: …/DR/ <name> /…
+    if (m && /[A-Za-z]/.test(m[1])) return this.cleanMerchant(m[1]);
+    m = /NEFT-[A-Za-z]+-[A-Za-z0-9]+-(.+?)-[A-Za-z0-9]+/i.exec(p); // NEFT: …-<name>-<remark>
+    if (m && /[A-Za-z]/.test(m[1])) return this.cleanMerchant(m[1]);
+    const s = p
+      .replace(/UPI\/[\d/]*\/(?:DR|CR)\//gi, ' ')
+      .replace(/NEFT-[A-Za-z]+-[A-Za-z0-9]+-/gi, ' ')
+      .replace(/\b[A-Z]?\d{6,}\b/g, ' ')
+      .replace(/\b(transfer|upi|neft|imps|rtgs|dr|cr|payment|paid|via|no remark|remark)\b/gi, ' ')
+      .replace(/[/*|:\\()-]+/g, ' ');
+    return this.cleanMerchant(s) || 'Bank transaction';
+  }
+
+  private cleanMerchant(s: string): string {
+    return s.replace(/\s+/g, ' ').replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '').trim().slice(0, 120);
+  }
+
+  // A reference for dedup — the bank's Ref/Cheque No (e.g. "S46063125"), else a long id.
+  private extractRef(p: string): string | undefined {
+    const m = /\bS\d{6,}\b/.exec(p) ?? /\b\d{9,}\b/.exec(p);
+    return m ? m[0].slice(0, 60) : undefined;
   }
 }
