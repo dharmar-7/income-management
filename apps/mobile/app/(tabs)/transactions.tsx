@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
-import AddTransactionSheet from '@/components/AddTransactionSheet';
+import AddTransactionSheet, { type EditingTransaction } from '@/components/AddTransactionSheet';
 import AppAlert from '@/components/AppAlert';
 import { useTheme } from '@/context/ThemeContext';
 import type { Theme } from '@/lib/theme';
@@ -36,7 +36,7 @@ interface Transaction {
   type: 'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT';
   source: 'TAKEOUT' | 'GMAIL' | 'MANUAL' | 'SMS';
   description: string | null;
-  category: { name: string; icon: string } | null;
+  category: { id: string; name: string; icon: string } | null;
 }
 
 interface TransactionsResponse {
@@ -69,6 +69,7 @@ export default function TransactionsScreen() {
   const [type, setType] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showSheet, setShowSheet] = useState(false);
+  const [editingTx, setEditingTx] = useState<EditingTransaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [alertData, setAlertData] = useState<{
     title: string; message: string;
@@ -78,6 +79,29 @@ export default function TransactionsScreen() {
 
   // Reset to page 1 when search changes
   useEffect(() => { setPage(1); }, [search]);
+
+  function openAdd() {
+    setEditingTx(null);
+    setShowSheet(true);
+  }
+
+  function openEdit(tx: Transaction) {
+    setEditingTx({
+      id: tx.id,
+      merchant: tx.merchant,
+      amount: tx.amount,
+      date: tx.date,
+      type: tx.type,
+      description: tx.description,
+      category: tx.category ? { id: tx.category.id } : null,
+    });
+    setShowSheet(true);
+  }
+
+  function closeSheet() {
+    setShowSheet(false);
+    setEditingTx(null);
+  }
 
   function handleDelete(id: string) {
     setAlertData({
@@ -132,8 +156,9 @@ export default function TransactionsScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <AddTransactionSheet
         visible={showSheet}
+        editing={editingTx}
         categories={categories ?? []}
-        onClose={() => setShowSheet(false)}
+        onClose={closeSheet}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['transactions'] })}
       />
       {/* Search bar */}
@@ -200,7 +225,7 @@ export default function TransactionsScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item: tx }) => (
-            <View style={styles.row}>
+            <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={() => openEdit(tx)}>
               <View style={[styles.iconBox,
                 tx.type === 'CREDIT' ? styles.iconBoxCredit
                 : tx.type === 'REFUND' ? styles.iconBoxRefund
@@ -263,7 +288,7 @@ export default function TransactionsScreen() {
                   </Text>
                 )}
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -299,7 +324,7 @@ export default function TransactionsScreen() {
       )}
 
       {/* FAB — add transaction */}
-      <TouchableOpacity style={styles.fab} onPress={() => setShowSheet(true)}>
+      <TouchableOpacity style={styles.fab} onPress={openAdd}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
       <AppAlert

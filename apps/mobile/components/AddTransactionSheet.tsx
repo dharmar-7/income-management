@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   View,
@@ -24,18 +24,33 @@ interface Category {
   icon: string;
 }
 
+type TxType = 'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT';
+
+// The subset of a transaction the sheet needs to pre-fill the edit form.
+export interface EditingTransaction {
+  id: string;
+  merchant: string;
+  amount: number;
+  date: string;
+  type: TxType;
+  description: string | null;
+  category: { id: string } | null;
+}
+
 interface Props {
   visible: boolean;
   categories: Category[];
   onClose: () => void;
   onSuccess: () => void;
+  // When set, the sheet edits this transaction instead of creating a new one.
+  editing?: EditingTransaction | null;
 }
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function AddTransactionSheet({ visible, categories, onClose, onSuccess }: Props) {
+export default function AddTransactionSheet({ visible, categories, onClose, onSuccess, editing }: Props) {
   const { getToken } = useAuth();
   const { theme: c } = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
@@ -43,7 +58,9 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
   const keyboardHeight = useKeyboardHeight();
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
 
-  const [txType, setTxType] = useState<'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT'>('DEBIT');
+  const isEdit = !!editing;
+
+  const [txType, setTxType] = useState<TxType>('DEBIT');
   const [amount, setAmount] = useState('');
   const [merchant, setMerchant] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -51,6 +68,23 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
   const [description, setDescription] = useState('');
   const [showCategories, setShowCategories] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // When the sheet opens, seed the form: from the transaction being edited,
+  // or back to blank defaults for a new one.
+  useEffect(() => {
+    if (!visible) return;
+    if (editing) {
+      setTxType(editing.type);
+      setAmount(String(editing.amount));
+      setMerchant(editing.merchant);
+      setCategoryId(editing.category?.id ?? '');
+      setDate(editing.date.slice(0, 10));
+      setDescription(editing.description ?? '');
+    } else {
+      reset();
+    }
+    setShowCategories(false);
+  }, [visible, editing]);
 
   function reset() {
     setTxType('DEBIT');
@@ -86,22 +120,41 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
     setLoading(true);
     try {
       const token = await getToken();
-      await apiFetch('/transactions', token!, {
-        method: 'POST',
-        body: JSON.stringify({
-          amount: parsed,
-          merchant: merchant.trim(),
-          type: txType,
-          date,
-          categoryId: categoryId || undefined,
-          description: description.trim() || undefined,
-        }),
-      });
+      if (isEdit && editing) {
+        // PATCH only the editable fields. Empty category/note are sent as ''
+        // so the backend can clear them.
+        await apiFetch(`/transactions/${editing.id}`, token!, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            amount: parsed,
+            merchant: merchant.trim(),
+            type: txType,
+            date,
+            categoryId,
+            description: description.trim(),
+          }),
+        });
+      } else {
+        await apiFetch('/transactions', token!, {
+          method: 'POST',
+          body: JSON.stringify({
+            amount: parsed,
+            merchant: merchant.trim(),
+            type: txType,
+            date,
+            categoryId: categoryId || undefined,
+            description: description.trim() || undefined,
+          }),
+        });
+      }
       reset();
       onSuccess();
       onClose();
     } catch (err: any) {
-      setAlertInfo({ title: 'Error', message: err.message ?? 'Failed to add transaction.' });
+      setAlertInfo({
+        title: 'Error',
+        message: err.message ?? (isEdit ? 'Failed to save changes.' : 'Failed to add transaction.'),
+      });
     } finally {
       setLoading(false);
     }
@@ -134,7 +187,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Add Transaction</Text>
+            <Text style={styles.title}>{isEdit ? 'Edit Transaction' : 'Add Transaction'}</Text>
             <TouchableOpacity onPress={handleClose}>
               <Text style={styles.closeBtn}>✕</Text>
             </TouchableOpacity>
@@ -275,7 +328,7 @@ export default function AddTransactionSheet({ visible, categories, onClose, onSu
             >
               {loading
                 ? <ActivityIndicator color={c.onColor} />
-                : <Text style={styles.submitText}>Add Transaction</Text>
+                : <Text style={styles.submitText}>{isEdit ? 'Save Changes' : 'Add Transaction'}</Text>
               }
             </TouchableOpacity>
 

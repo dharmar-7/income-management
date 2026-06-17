@@ -13,16 +13,44 @@ interface Category {
   icon: string;
 }
 
+type TxType = 'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT';
+
 interface Transaction {
   id: string;
   merchant: string;
   amount: number;
   date: string;
-  type: 'DEBIT' | 'CREDIT';
+  type: TxType;
   description: string | null;
   source: string;
   category: Category | null;
 }
+
+const TYPE_LABEL: Record<TxType, string> = {
+  DEBIT: 'Expense',
+  CREDIT: 'Income',
+  REFUND: 'Refund',
+  INVESTMENT: 'Investment',
+};
+const TYPE_SIGN: Record<TxType, string> = {
+  DEBIT: '-',
+  CREDIT: '+',
+  REFUND: '↩',
+  INVESTMENT: '→',
+};
+// Money-in (CREDIT/REFUND) reads green; investment transfers indigo; spend rose.
+const TYPE_COLOR: Record<TxType, string> = {
+  DEBIT: 'text-rose-600',
+  CREDIT: 'text-emerald-600',
+  REFUND: 'text-emerald-600',
+  INVESTMENT: 'text-indigo-600',
+};
+const TYPE_OPTIONS = [
+  { value: 'DEBIT', label: 'Expense', icon: '💸' },
+  { value: 'CREDIT', label: 'Income', icon: '💰' },
+  { value: 'REFUND', label: 'Refund', icon: '↩️' },
+  { value: 'INVESTMENT', label: 'Investment', icon: '📊' },
+];
 
 function formatINR(amount: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -48,7 +76,23 @@ export default function TransactionDetail({ id }: { id: string }) {
 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [note, setNote] = useState<string>('');
+  const [merchant, setMerchant] = useState<string>('');
+  const [amount, setAmount] = useState<string>('');
+  const [date, setDate] = useState<string>('');
+  const [txType, setTxType] = useState<TxType>('DEBIT');
   const [isEditing, setIsEditing] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  // Pull current values into the edit form (used on load + Cancel)
+  function seedForm(t: Transaction) {
+    setSelectedCategory(t.category?.id ?? '');
+    setNote(t.description ?? '');
+    setMerchant(t.merchant);
+    setAmount(String(t.amount));
+    setDate(t.date.slice(0, 10));
+    setTxType(t.type);
+    setFormError(null);
+  }
 
   // Fetch transaction
   const { data: tx, isLoading, error } = useQuery({
@@ -57,8 +101,7 @@ export default function TransactionDetail({ id }: { id: string }) {
       const token = await getToken();
       const result = await apiFetch<Transaction>(`/transactions/${id}`, token!);
       // Pre-fill edit fields with current values
-      setSelectedCategory(result.category?.id ?? '');
-      setNote(result.description ?? '');
+      seedForm(result);
       return result;
     },
   });
@@ -74,7 +117,14 @@ export default function TransactionDetail({ id }: { id: string }) {
 
   // Save mutation
   const mutation = useMutation({
-    mutationFn: async (body: { categoryId?: string; description?: string }) => {
+    mutationFn: async (body: {
+      amount?: number;
+      merchant?: string;
+      type?: TxType;
+      date?: string;
+      categoryId?: string;
+      description?: string;
+    }) => {
       const token = await getToken();
       return apiFetch<Transaction>(`/transactions/${id}`, token!, {
         method: 'PATCH',
@@ -86,14 +136,34 @@ export default function TransactionDetail({ id }: { id: string }) {
       queryClient.invalidateQueries({ queryKey: ['transaction', id] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['by-category'] });
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
       setIsEditing(false);
     },
   });
 
   function handleSave() {
+    const parsed = parseFloat(amount);
+    if (!merchant.trim()) {
+      setFormError('Merchant is required.');
+      return;
+    }
+    if (isNaN(parsed) || parsed <= 0) {
+      setFormError('Enter a valid amount.');
+      return;
+    }
+    if (!date) {
+      setFormError('Date is required.');
+      return;
+    }
+    setFormError(null);
     mutation.mutate({
-      categoryId: selectedCategory || undefined,
-      description: note || undefined,
+      amount: parsed,
+      merchant: merchant.trim(),
+      type: txType,
+      date,
+      // '' clears the field on the backend (Uncategorized / no note)
+      categoryId: selectedCategory,
+      description: note,
     });
   }
 
@@ -133,8 +203,8 @@ export default function TransactionDetail({ id }: { id: string }) {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">{tx.merchant}</h2>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{formatDate(tx.date)}</p>
           </div>
-          <div className={`text-2xl font-bold flex-shrink-0 ${tx.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {tx.type === 'CREDIT' ? '+' : '-'}{formatINR(tx.amount)}
+          <div className={`text-2xl font-bold flex-shrink-0 ${TYPE_COLOR[tx.type]}`}>
+            {TYPE_SIGN[tx.type]}{formatINR(tx.amount)}
           </div>
         </div>
 
@@ -142,7 +212,7 @@ export default function TransactionDetail({ id }: { id: string }) {
           <div>
             <p className="text-gray-400 dark:text-gray-500">Type</p>
             <p className="font-medium mt-0.5 dark:text-white">
-              {tx.type === 'CREDIT' ? 'Income' : 'Expense'}
+              {TYPE_LABEL[tx.type]}
             </p>
           </div>
           <div>
@@ -181,6 +251,52 @@ export default function TransactionDetail({ id }: { id: string }) {
         {isEditing ? (
           <div className="space-y-4">
             <div>
+              <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Type</label>
+              <CustomSelect
+                value={txType}
+                onChange={v => setTxType(v as TxType)}
+                options={TYPE_OPTIONS}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Amount (₹)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gray-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gray-400"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Merchant</label>
+              <input
+                type="text"
+                maxLength={200}
+                value={merchant}
+                onChange={e => setMerchant(e.target.value)}
+                placeholder="e.g. Swiggy"
+                className="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gray-400"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm text-gray-500 dark:text-gray-400 mb-1">Category</label>
               <CustomSelect
                 value={selectedCategory}
@@ -207,8 +323,7 @@ export default function TransactionDetail({ id }: { id: string }) {
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => {
-                  setSelectedCategory(tx.category?.id ?? '');
-                  setNote(tx.description ?? '');
+                  seedForm(tx);
                   setIsEditing(false);
                 }}
                 className="rounded-full border border-gray-200 dark:border-gray-600 dark:text-gray-300 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -224,13 +339,15 @@ export default function TransactionDetail({ id }: { id: string }) {
               </button>
             </div>
 
-            {mutation.isError && (
-              <p className="text-sm text-red-500 text-center">Failed to save. Try again.</p>
+            {(formError || mutation.isError) && (
+              <p className="text-sm text-red-500 text-center">
+                {formError ?? 'Failed to save. Try again.'}
+              </p>
             )}
           </div>
         ) : (
           <p className="text-sm text-gray-400 dark:text-gray-500">
-            Click Edit to update the category or add a note to this transaction.
+            Click Edit to change the amount, merchant, date, type, category, or note.
           </p>
         )}
       </div>

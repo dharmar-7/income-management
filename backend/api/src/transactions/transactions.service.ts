@@ -199,19 +199,70 @@ export class TransactionsService {
     return tx;
   }
 
-  // List all categories (for edit dropdown)
+  // List all categories for the picker. "Transport"/"Travel" were retired in favour of
+  // explicit travel modes (Cab & Auto / Bus / Train / Flight); their rows are kept so old
+  // transactions keep their label, but they're hidden here so they're no longer selectable.
   getCategories() {
-    return this.prisma.category.findMany({ orderBy: { name: 'asc' } });
+    return this.prisma.category.findMany({
+      where: { name: { notIn: ['Transport', 'Travel'] } },
+      orderBy: { name: 'asc' },
+    });
   }
 
-  // Update a transaction's category or description
-  async update(clerkId: string, transactionId: string, data: { categoryId?: string; description?: string }) {
+  // Update a transaction. Any subset of fields may be supplied — only what the
+  // client sends is changed. This lets users fix an imported transaction whose
+  // merchant/amount/date the parser got wrong, re-categorise it, change its type,
+  // or add a note.
+  async update(
+    clerkId: string,
+    transactionId: string,
+    data: {
+      amount?: number;
+      merchant?: string;
+      type?: TransactionType;
+      date?: string;
+      categoryId?: string;
+      description?: string;
+    },
+  ) {
     const userId = await this.resolveUserId(clerkId);
-    return this.prisma.transaction.update({
-      where: { id: transactionId, userId },
-      data,
-      include: { category: true },
-    });
+
+    // Build the Prisma update payload from only the fields that were provided.
+    // Empty strings for category/note mean "clear it" (→ null).
+    const update: {
+      amount?: number;
+      merchant?: string;
+      type?: TransactionType;
+      date?: Date;
+      categoryId?: string | null;
+      description?: string | null;
+    } = {};
+    if (data.amount !== undefined) update.amount = data.amount;
+    if (data.merchant !== undefined) update.merchant = data.merchant.trim();
+    if (data.type !== undefined) update.type = data.type;
+    if (data.date !== undefined) update.date = new Date(data.date);
+    if (data.categoryId !== undefined) update.categoryId = data.categoryId || null;
+    if (data.description !== undefined) update.description = data.description.trim() || null;
+
+    try {
+      return await this.prisma.transaction.update({
+        where: { id: transactionId, userId },
+        data: update,
+        include: { category: true },
+      });
+    } catch (e: any) {
+      // Editing merchant/amount/date can collide with the @@unique([userId, merchant, amount, date])
+      if (e?.code === 'P2002') {
+        throw new ConflictException(
+          'Another transaction with the same merchant, amount, and date already exists.',
+        );
+      }
+      // update() throws P2025 when no row matches the id+userId (wrong owner / deleted)
+      if (e?.code === 'P2025') {
+        throw new NotFoundException('Transaction not found.');
+      }
+      throw e;
+    }
   }
 
   // Create a manual transaction

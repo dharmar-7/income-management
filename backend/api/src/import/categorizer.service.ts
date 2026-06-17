@@ -14,18 +14,44 @@ const MERCHANT_CATEGORY_MAP: Record<string, string> = {
   grofers: 'Groceries',
   instamart: 'Groceries',
 
-  // Transport
-  uber: 'Transport',
-  ola: 'Transport',
-  rapido: 'Transport',
-  namma: 'Transport',
-  irctc: 'Transport',
-  redbus: 'Transport',
-  makemytrip: 'Travel',
-  goibibo: 'Travel',
-  yatra: 'Travel',
-  indigo: 'Travel',
-  'air india': 'Travel',
+  // Mobility — split by mode of travel
+  uber: 'Cab & Auto',
+  ola: 'Cab & Auto',
+  rapido: 'Cab & Auto',
+  namma: 'Cab & Auto',
+  redbus: 'Bus',
+  irctc: 'Train',
+  indigo: 'Flight',
+  'air india': 'Flight',
+  spicejet: 'Flight',
+  vistara: 'Flight',
+  akasa: 'Flight',
+  makemytrip: 'Flight', // booking aggregators default to Flight (most common) — editable in review
+  goibibo: 'Flight',
+  yatra: 'Flight',
+
+  // Fuel (vehicle) — "gas" stays under Utilities for cooking-gas bills
+  indianoil: 'Fuel',
+  iocl: 'Fuel',
+  bpcl: 'Fuel',
+  hpcl: 'Fuel',
+  'bharat petroleum': 'Fuel',
+  'hindustan petroleum': 'Fuel',
+  petrol: 'Fuel',
+  petroleum: 'Fuel',
+  fuel: 'Fuel',
+
+  // Investment
+  groww: 'Investment',
+  zerodha: 'Investment',
+  upstox: 'Investment',
+  kuvera: 'Investment',
+  etmoney: 'Investment',
+  smallcase: 'Investment',
+  'mutual fund': 'Investment',
+
+  // Income
+  salary: 'Salary',
 
   // Shopping
   amazon: 'Shopping',
@@ -83,19 +109,28 @@ const MERCHANT_CATEGORY_MAP: Record<string, string> = {
   fees: 'Education',
 };
 
-// Default categories to always create in the DB
+// Default categories to always create in the DB. "Transport" and "Travel" were
+// retired in favour of explicit travel modes (Cab & Auto / Bus / Train / Flight);
+// their rows are NOT recreated here but old transactions referencing them still work
+// (transactions.service hides the two retired names from the picker).
 const DEFAULT_CATEGORIES = [
   { name: 'Food & Dining', icon: '🍽️' },
+  { name: 'Snack', icon: '🍿' },
   { name: 'Groceries', icon: '🛒' },
-  { name: 'Transport', icon: '🚗' },
-  { name: 'Travel', icon: '✈️' },
+  { name: 'Cab & Auto', icon: '🚕' },
+  { name: 'Bus', icon: '🚌' },
+  { name: 'Train', icon: '🚆' },
+  { name: 'Flight', icon: '✈️' },
+  { name: 'Fuel', icon: '⛽' },
   { name: 'Shopping', icon: '🛍️' },
   { name: 'Entertainment', icon: '🎬' },
   { name: 'Utilities', icon: '💡' },
   { name: 'Health', icon: '💊' },
   { name: 'Insurance', icon: '🛡️' },
   { name: 'Finance', icon: '🏦' },
+  { name: 'Investment', icon: '📈' },
   { name: 'Education', icon: '📚' },
+  { name: 'Salary', icon: '💵' },
   { name: 'Other', icon: '📦' },
 ];
 

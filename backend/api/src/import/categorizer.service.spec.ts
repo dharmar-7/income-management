@@ -42,11 +42,17 @@ describe('CategorizerService', () => {
     expect(typeof id).toBe('string');
   });
 
-  it('matches "UBER TRIP" (uppercase) to Transport', () => {
-    const uberId = service.getCategoryId('UBER TRIP');
-    const transportId = service.getCategoryId('Ola ride');
-    // Both should map to the same category (Transport)
-    expect(uberId).toBe(transportId);
+  it('maps ride-hailing to "Cab & Auto" and splits travel by mode', () => {
+    const uber = service.getCategoryId('UBER TRIP');
+    const ola = service.getCategoryId('Ola ride');
+    const train = service.getCategoryId('IRCTC booking');
+    const flight = service.getCategoryId('IndiGo 6E flight');
+    // Uber & Ola share "Cab & Auto"…
+    expect(uber).toBe(ola);
+    // …but each mode of travel is now its own category.
+    expect(uber).not.toBe(train);
+    expect(uber).not.toBe(flight);
+    expect(train).not.toBe(flight);
   });
 
   it('matches "Amazon.in" to Shopping', () => {
