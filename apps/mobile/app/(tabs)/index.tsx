@@ -89,7 +89,7 @@ const CHART_COLORS = [
 // ─── Dashboard Screen ─────────────────────────────────────────────────────────
 
 export default function DashboardScreen() {
-  const { theme: c } = useTheme();
+  const { theme: c, scheme, setMode } = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -183,9 +183,22 @@ export default function DashboardScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
       >
-        {/* Greeting */}
-        <Text style={styles.greeting}>Hey, {user?.firstName ?? 'there'} 👋</Text>
-        {s && <Text style={styles.subGreeting}>{MONTHS[s.month]} {s.year} summary</Text>}
+        {/* Greeting + theme toggle */}
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>Hey, {user?.firstName ?? 'there'} 👋</Text>
+            {s && <Text style={styles.subGreeting}>{MONTHS[s.month]} {s.year} summary</Text>}
+          </View>
+          <TouchableOpacity
+            style={styles.themeToggle}
+            onPress={() => setMode(scheme === 'dark' ? 'light' : 'dark')}
+            accessibilityRole="button"
+            accessibilityLabel={scheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.themeToggleIcon}>{scheme === 'dark' ? '☀️' : '🌙'}</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Summary cards */}
         {summaryQuery.isLoading ? (
@@ -421,8 +434,15 @@ const makeStyles = (c: Theme) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg },
   scroll: { flex: 1 },
   content: { padding: 16, gap: 12, paddingBottom: 32 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   greeting: { fontSize: 22, fontWeight: '700', color: c.text },
   subGreeting: { fontSize: 13, color: c.textFaint, marginTop: -4 },
+  themeToggle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: c.card, borderWidth: 1, borderColor: c.cardBorder,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  themeToggleIcon: { fontSize: 18 },
   sectionTitle: { fontSize: 15, fontWeight: '600', color: c.text, marginTop: 8 },
 
   cardsRow: { flexDirection: 'row', gap: 8 },
