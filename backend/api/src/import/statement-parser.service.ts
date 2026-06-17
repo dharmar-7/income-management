@@ -39,18 +39,21 @@ export class StatementParserService {
     jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12,
   };
 
-  // A transaction date at the START of a line (dd-MMM-yy). Separators may be -, /, or a
-  // space — OCR frequently turns "14-Jun-26" into "14 Jun 26".
-  private readonly DATE_LEAD = /^(\d{1,2}[-/ ][A-Za-z]{3,4}[-/ ]\d{2,4})\b/;
+  // A transaction date at the START of a line. Two shapes seen across banks:
+  // dd-MMM-yy (IOB, e.g. "14-Jun-26") and dd-mm-yyyy (TMB, e.g. "29-05-2026").
+  // Separators may be -, /, ".", or a space (OCR turns "14-Jun-26" into "14 Jun 26").
+  private readonly DATE_LEAD =
+    /^(\d{1,2}[-/ ][A-Za-z]{3,4}[-/ ]\d{2,4}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})\b/;
   // A bracketed value-date at the start of a line, e.g. "(14-Jun-26)".
   private readonly VDATE_LEAD = /^\((\d{1,2}[-/ ][A-Za-z]{3,4}[-/ ]\d{2,4})\)\s*/;
   // A trailing run of ≥2 amount "cells" — money (1234.56 / 1,234.56) or a "-" placeholder
-  // for the empty debit/credit column, e.g. "- 6.00 7,948.80" or "100.00 - 7,942.80".
+  // for an empty debit/credit column, e.g. "- 6.00 7,948.80", "100.00 - 7,942.80" (IOB
+  // 3-column) or "70.00 672.88" (TMB: amount + balance, no placeholder).
   private readonly AMOUNTS_TAIL =
     /((?:-|\d[\d,]*\.\d{2})(?:\s+(?:-|\d[\d,]*\.\d{2}))+)\s*$/;
   // Lines that are headers/footers/totals, never transaction rows.
   private readonly SKIP_LINE =
-    /(opening balance|closing balance|statement of|account (no|holder|number)|customer id|ifsc|ifs code|branch (address|code)|contact no|email id|page \d+ of|effective available|computer generated|report generation|^particulars\b|transaction\s*type|debit\(rs\))/i;
+    /(opening balance|closing balance|statement (of|for)|account (no|holder|number)|customer id|ifsc|ifs code|micr code|branch (name|address|code)|phone no|contact no|e-?mail id|a\/c type|page \d+ of|effective available|computer generated|auto generated|authenticated|regd address|report generation|never share|^particulars\b|transaction\s*type|chq\.?\s*no|withdrawals|deposits|debit\(rs\)|balance\(inr\))/i;
 
   async parse(buffer: Buffer, mimetype: string): Promise<ParsedStatementTxn[]> {
     const text = await this.extractText(buffer, mimetype);
@@ -206,7 +209,12 @@ export class StatementParserService {
         if (!currentDate) { const iso = this.parseDate(vm[1]); if (iso) currentDate = iso; }
         line = line.slice(vm[0].length).trim();
       }
-      if (!line || this.SKIP_LINE.test(line)) continue;
+      if (!line) continue;
+      // Seed the running balance from the opening line so the FIRST row's debit/credit
+      // delta (used when there's no explicit Dr/Cr column, e.g. TMB) is correct.
+      const ob = /^opening balance\b.*?([\d,]+\.\d{2})\s*$/i.exec(line);
+      if (ob) { prevBalance = this.money(ob[1]); continue; }
+      if (this.SKIP_LINE.test(line)) continue;
 
       // Does this line end in the amount columns? If so, it completes a transaction.
       const am = this.AMOUNTS_TAIL.exec(line);
@@ -275,7 +283,9 @@ export class StatementParserService {
 
   // Best-effort payee name from the particulars text.
   private extractMerchant(p: string): string {
-    let m = /\/(?:DR|CR)\/\s*([^/]+?)\s*\//i.exec(p); // UPI: …/DR/ <name> /…
+    let m = /\/(?:DR|CR)\/\s*([^/]+?)\s*\//i.exec(p); // IOB UPI: …/DR|CR/ <name> /…
+    if (m && /[A-Za-z]/.test(m[1])) return this.cleanMerchant(m[1]);
+    m = /UPI\/\d+\/([^/]+?)\/[A-Za-z]{2,6}\//i.exec(p); // TMB UPI: UPI/<id>/<name>/<bank>/…
     if (m && /[A-Za-z]/.test(m[1])) return this.cleanMerchant(m[1]);
     m = /NEFT-[A-Za-z]+-[A-Za-z0-9]+-(.+?)-[A-Za-z0-9]+/i.exec(p); // NEFT: …-<name>-<remark>
     if (m && /[A-Za-z]/.test(m[1])) return this.cleanMerchant(m[1]);
