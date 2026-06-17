@@ -108,7 +108,9 @@ export class SavingsService {
         type: dto.type,
         investedAmount: dto.investedAmount,
         charges: dto.charges,
-        currentValue: dto.currentValue,
+        // Current value defaults to the invested amount when not supplied.
+        currentValue: dto.currentValue ?? dto.investedAmount,
+        sipAmount: dto.sipAmount ?? null,
         startDate: new Date(dto.startDate),
         maturityDate: dto.maturityDate ? new Date(dto.maturityDate) : null,
         note: dto.note?.trim() || null,
@@ -136,17 +138,110 @@ export class SavingsService {
   async updateSaving(clerkId: string, savingId: string, dto: UpdateSavingDto) {
     const userId = await this.resolveUserId(clerkId);
     const saving = await this.prisma.saving.findUnique({ where: { id: savingId, userId } });
-    if (!saving) throw new NotFoundException('Saving not found.');
+    if (!saving) throw new NotFoundException('Investment not found.');
+
+    // Where will this investment live after the edit — same platform, a new one,
+    // or standalone? (undefined in the DTO = "leave as-is".)
+    const targetPlatformId =
+      dto.platformId !== undefined ? dto.platformId || null : saving.platformId;
+
+    // If it ends up on a platform, its new cost must still fit that wallet's
+    // balance — counting every OTHER investment on the platform but not this
+    // one's old cost (which we're about to replace).
+    if (targetPlatformId) {
+      const platform = await this.prisma.investmentPlatform.findUnique({
+        where: { id: targetPlatformId, userId },
+        include: { savings: true },
+      });
+      if (!platform) throw new NotFoundException('Platform not found.');
+
+      const newInvested = dto.investedAmount ?? saving.investedAmount;
+      const newCharges = dto.charges ?? saving.charges;
+      const newCost = newInvested + newCharges;
+      const otherCost = platform.savings
+        .filter(s => s.id !== savingId)
+        .reduce((sum, s) => sum + s.investedAmount + s.charges, 0);
+      const available = platform.totalAdded - otherCost;
+
+      if (newCost > available) {
+        throw new BadRequestException(
+          `Insufficient ${platform.name} balance. Available: ₹${available.toFixed(0)}, needed: ₹${newCost.toFixed(0)}.`,
+        );
+      }
+    }
 
     return this.prisma.saving.update({
       where: { id: savingId },
       data: {
-        ...(dto.currentValue !== undefined && { currentValue: dto.currentValue }),
+        ...(dto.name !== undefined && { name: dto.name.trim() }),
+        ...(dto.type !== undefined && { type: dto.type }),
+        ...(dto.investedAmount !== undefined && { investedAmount: dto.investedAmount }),
         ...(dto.charges !== undefined && { charges: dto.charges }),
+        ...(dto.currentValue !== undefined && { currentValue: dto.currentValue }),
+        ...(dto.sipAmount !== undefined && { sipAmount: dto.sipAmount || null }),
+        ...(dto.startDate !== undefined && { startDate: new Date(dto.startDate) }),
+        ...(dto.maturityDate !== undefined && {
+          maturityDate: dto.maturityDate ? new Date(dto.maturityDate) : null,
+        }),
+        ...(dto.platformId !== undefined && { platformId: dto.platformId || null }),
         ...(dto.note !== undefined && { note: dto.note?.trim() || null }),
       },
       include: { platform: true },
     });
+  }
+
+  // Add one contribution to an existing investment — the monthly SIP top-up.
+  // Increases both the invested principal and the current value by `amount`
+  // (a fresh contribution is worth what you put in until the market moves), so
+  // it never creates an artificial gain or loss. `amount` defaults to the
+  // investment's stored monthly sipAmount.
+  async contribute(clerkId: string, savingId: string, amount?: number) {
+    const userId = await this.resolveUserId(clerkId);
+    const saving = await this.prisma.saving.findUnique({
+      where: { id: savingId, userId },
+      include: { platform: { include: { savings: true } } },
+    });
+    if (!saving) throw new NotFoundException('Investment not found.');
+
+    const amt = amount ?? saving.sipAmount ?? 0;
+    if (amt <= 0) {
+      throw new BadRequestException(
+        'No SIP amount is set for this investment. Set a monthly amount first, or pass an explicit amount.',
+      );
+    }
+
+    // If it sits in a platform wallet, the contribution must fit the wallet's
+    // remaining balance — same rule as creating an investment.
+    if (saving.platform) {
+      const totalInvested = saving.platform.savings.reduce(
+        (s, sv) => s + sv.investedAmount + sv.charges,
+        0,
+      );
+      const balance = saving.platform.totalAdded - totalInvested;
+      if (amt > balance) {
+        throw new BadRequestException(
+          `Insufficient ${saving.platform.name} balance. Available: ₹${balance.toFixed(0)}, needed: ₹${amt.toFixed(0)}. Top up the platform first.`,
+        );
+      }
+    }
+
+    const updated = await this.prisma.saving.update({
+      where: { id: savingId },
+      data: {
+        investedAmount: saving.investedAmount + amt,
+        currentValue: saving.currentValue + amt,
+      },
+      include: { platform: true },
+    });
+
+    const netCost = updated.investedAmount + updated.charges;
+    return {
+      ...updated,
+      netCost,
+      gainLoss: updated.currentValue - netCost,
+      gainPercent: netCost > 0 ? ((updated.currentValue - netCost) / netCost) * 100 : 0,
+      contributed: amt,
+    };
   }
 
   async removeSaving(clerkId: string, savingId: string) {

@@ -30,6 +30,21 @@ interface InvestmentPlatform {
   balance: number;
 }
 
+// The fields the form needs to pre-fill when editing an existing investment.
+export interface EditingSaving {
+  id: string;
+  name: string;
+  type: SavingType;
+  investedAmount: number;
+  charges: number;
+  currentValue: number;
+  sipAmount: number | null;
+  startDate: string;
+  maturityDate: string | null;
+  platformId: string; // '' when standalone
+  note: string | null;
+}
+
 type SheetMode = 'platform' | 'saving';
 
 interface Props {
@@ -38,6 +53,8 @@ interface Props {
   platforms: InvestmentPlatform[];
   onClose: () => void;
   onSuccess: () => void;
+  // When set (and mode is 'saving'), the sheet edits this investment.
+  editing?: EditingSaving | null;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
@@ -177,25 +194,29 @@ function AddPlatformForm({ onClose, onSuccess }: { onClose: () => void; onSucces
 
 // ─── Add Saving Form ────────────────────────────────────────────────────────────
 
-function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: InvestmentPlatform[]; onClose: () => void; onSuccess: () => void }) {
+function AddSavingForm({ platforms, editing, onClose, onSuccess }: { platforms: InvestmentPlatform[]; editing?: EditingSaving | null; onClose: () => void; onSuccess: () => void }) {
   const { theme: c } = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
   const { getToken } = useAuth();
+  const isEdit = !!editing;
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
-  const [savingType, setSavingType] = useState<SavingType>('MUTUAL_FUNDS');
-  const [name, setName] = useState('');
-  const [investedAmount, setInvestedAmount] = useState('');
-  const [charges, setCharges] = useState('0');
-  const [currentValue, setCurrentValue] = useState('');
-  const [startDate, setStartDate] = useState(todayISO);
-  const [maturityDate, setMaturityDate] = useState('');
-  const [platformId, setPlatformId] = useState('');
-  const [note, setNote] = useState('');
+  // The form mounts fresh each time the sheet opens, so seeding state from the
+  // `editing` prop here is enough — no effect needed.
+  const [savingType, setSavingType] = useState<SavingType>(editing?.type ?? 'MUTUAL_FUNDS');
+  const [name, setName] = useState(editing?.name ?? '');
+  const [investedAmount, setInvestedAmount] = useState(editing ? String(editing.investedAmount) : '');
+  const [charges, setCharges] = useState(editing ? String(editing.charges) : '0');
+  const [currentValue, setCurrentValue] = useState(editing ? String(editing.currentValue) : '');
+  const [sipAmount, setSipAmount] = useState(editing?.sipAmount ? String(editing.sipAmount) : '');
+  const [startDate, setStartDate] = useState(editing ? editing.startDate.slice(0, 10) : todayISO());
+  const [maturityDate, setMaturityDate] = useState(editing?.maturityDate ? editing.maturityDate.slice(0, 10) : '');
+  const [platformId, setPlatformId] = useState(editing?.platformId ?? '');
+  const [note, setNote] = useState(editing?.note ?? '');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit() {
-    if (!name.trim() || !investedAmount || !currentValue || !startDate) {
-      setAlertInfo({ title: 'Missing fields', message: 'Name, invested amount, current value, and start date are required.' });
+    if (!name.trim() || !investedAmount || !startDate) {
+      setAlertInfo({ title: 'Missing fields', message: 'Name, invested amount, and start date are required.' });
       return;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
@@ -210,24 +231,49 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
     setLoading(true);
     try {
       const token = await getToken();
-      await apiFetch('/savings', token!, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          type: savingType,
-          investedAmount: parseFloat(investedAmount),
-          charges: parseFloat(charges) || 0,
-          currentValue: parseFloat(currentValue),
-          startDate,
-          maturityDate: maturityDate || undefined,
-          platformId: platformId || undefined,
-          note: note.trim() || undefined,
-        }),
-      });
+      const invested = parseFloat(investedAmount);
+      if (isEdit && editing) {
+        await apiFetch(`/savings/${editing.id}`, token!, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            name: name.trim(),
+            type: savingType,
+            investedAmount: invested,
+            charges: parseFloat(charges) || 0,
+            // Blank current value on edit → leave the existing value unchanged.
+            currentValue: currentValue ? parseFloat(currentValue) : undefined,
+            sipAmount: sipAmount ? parseFloat(sipAmount) : 0, // 0 clears the SIP
+            startDate,
+            maturityDate: maturityDate || null, // null clears it
+            platformId: platformId || null, // null → standalone
+            note: note.trim() || null,
+          }),
+        });
+      } else {
+        await apiFetch('/savings', token!, {
+          method: 'POST',
+          body: JSON.stringify({
+            name: name.trim(),
+            type: savingType,
+            investedAmount: invested,
+            charges: parseFloat(charges) || 0,
+            // Blank current value → backend defaults it to the invested amount.
+            currentValue: currentValue ? parseFloat(currentValue) : undefined,
+            sipAmount: sipAmount ? parseFloat(sipAmount) : undefined,
+            startDate,
+            maturityDate: maturityDate || undefined,
+            platformId: platformId || undefined,
+            note: note.trim() || undefined,
+          }),
+        });
+      }
       onSuccess();
       onClose();
     } catch (err: any) {
-      setAlertInfo({ title: 'Error', message: err.message ?? 'Failed to add investment.' });
+      setAlertInfo({
+        title: 'Error',
+        message: err.message ?? (isEdit ? 'Failed to save changes.' : 'Failed to add investment.'),
+      });
     } finally {
       setLoading(false);
     }
@@ -300,12 +346,26 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
           <TextInput
             value={currentValue}
             onChangeText={setCurrentValue}
-            placeholder="0"
+            placeholder="optional"
             placeholderTextColor={c.textFaint}
             keyboardType="decimal-pad"
             style={styles.input}
           />
         </View>
+      </View>
+
+      <View style={styles.field}>
+        <Text style={styles.label}>
+          Monthly SIP (₹) <Text style={{ color: c.textFaint }}>(optional)</Text>
+        </Text>
+        <TextInput
+          value={sipAmount}
+          onChangeText={setSipAmount}
+          placeholder="e.g. 100 — shows a + button to add each month"
+          placeholderTextColor={c.textFaint}
+          keyboardType="decimal-pad"
+          style={styles.input}
+        />
       </View>
 
       <DatePickerField
@@ -371,7 +431,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
       >
         {loading
           ? <ActivityIndicator color={c.onColor} />
-          : <Text style={styles.submitText}>Add Investment</Text>
+          : <Text style={styles.submitText}>{isEdit ? 'Save Changes' : 'Add Investment'}</Text>
         }
       </TouchableOpacity>
     </ScrollView>
@@ -388,7 +448,7 @@ function AddSavingForm({ platforms, onClose, onSuccess }: { platforms: Investmen
 
 // ─── Sheet ──────────────────────────────────────────────────────────────────────
 
-export default function AddSavingSheet({ visible, mode, platforms, onClose, onSuccess }: Props) {
+export default function AddSavingSheet({ visible, mode, platforms, onClose, onSuccess, editing }: Props) {
   const { theme: c } = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
   const insets = useSafeAreaInsets();
@@ -415,7 +475,7 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.title}>
-              {mode === 'platform' ? '+ Add Platform' : '+ Add Investment'}
+              {mode === 'platform' ? '+ Add Platform' : editing ? 'Edit Investment' : '+ Add Investment'}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text style={styles.closeBtn}>✕</Text>
@@ -424,7 +484,7 @@ export default function AddSavingSheet({ visible, mode, platforms, onClose, onSu
 
           {mode === 'platform'
             ? <AddPlatformForm onClose={onClose} onSuccess={onSuccess} />
-            : <AddSavingForm platforms={platforms} onClose={onClose} onSuccess={onSuccess} />
+            : <AddSavingForm platforms={platforms} editing={editing} onClose={onClose} onSuccess={onSuccess} />
           }
         </View>
       </View>

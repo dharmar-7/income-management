@@ -207,6 +207,7 @@ model Saving {
   investedAmount Float                           // principal invested
   charges        Float       @default(0)         // brokerage, STT, GST etc.
   currentValue   Float                           // latest known value (updated manually)
+  sipAmount      Float?                          // monthly SIP amount; enables the quick "+1 month" top-up button
   startDate      DateTime
   maturityDate   DateTime?                       // for FD, RD, NSC etc.
   note           String?

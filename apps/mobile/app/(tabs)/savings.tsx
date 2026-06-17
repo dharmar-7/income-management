@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
-import AddSavingSheet from '@/components/AddSavingSheet';
+import AddSavingSheet, { type EditingSaving } from '@/components/AddSavingSheet';
 import AppAlert from '@/components/AppAlert';
 import { useTheme } from '@/context/ThemeContext';
 import type { Theme } from '@/lib/theme';
@@ -38,6 +38,7 @@ interface Saving {
   investedAmount: number;
   charges: number;
   currentValue: number;
+  sipAmount: number | null;
   netCost: number;
   gainLoss: number;
   gainPercent: number;
@@ -86,6 +87,7 @@ export default function SavingsScreen() {
   const queryClient = useQueryClient();
 
   const [sheetMode, setSheetMode] = useState<'platform' | 'saving' | null>(null);
+  const [editingSaving, setEditingSaving] = useState<Saving | null>(null);
   const [alertData, setAlertData] = useState<{
     title: string; message: string;
     confirmLabel?: string; confirmDestructive?: boolean;
@@ -97,6 +99,26 @@ export default function SavingsScreen() {
     queryClient.invalidateQueries({ queryKey: ['savings-platforms'] });
     queryClient.invalidateQueries({ queryKey: ['savings-list'] });
   };
+
+  function openAddPlatform() { setEditingSaving(null); setSheetMode('platform'); }
+  function openAddSaving() { setEditingSaving(null); setSheetMode('saving'); }
+  function openEditSaving(s: Saving) { setEditingSaving(s); setSheetMode('saving'); }
+  function closeSheet() { setSheetMode(null); setEditingSaving(null); }
+
+  // Map the list row into the shape the edit form needs (platform → platformId).
+  const editingPayload: EditingSaving | null = editingSaving ? {
+    id: editingSaving.id,
+    name: editingSaving.name,
+    type: editingSaving.type,
+    investedAmount: editingSaving.investedAmount,
+    charges: editingSaving.charges,
+    currentValue: editingSaving.currentValue,
+    sipAmount: editingSaving.sipAmount,
+    startDate: editingSaving.startDate,
+    maturityDate: editingSaving.maturityDate,
+    platformId: editingSaving.platform?.id ?? '',
+    note: editingSaving.note,
+  } : null;
 
   const summaryQuery = useQuery({
     queryKey: ['savings-summary'],
@@ -151,6 +173,28 @@ export default function SavingsScreen() {
     });
   }
 
+  function contributeSip(s: Saving) {
+    if (!s.sipAmount) return;
+    setAlertData({
+      title: 'Add this month’s SIP',
+      message: `Add ${formatINR(s.sipAmount)} to "${s.name}"? This bumps both the invested amount and current value.`,
+      confirmLabel: 'Add',
+      onConfirm: async () => {
+        try {
+          const token = await getToken();
+          await apiFetch(`/savings/${s.id}/contribute`, token!, { method: 'POST', body: JSON.stringify({}) });
+          invalidate();
+          setAlertData({
+            title: 'SIP added ✅',
+            message: `Added ${formatINR(s.sipAmount!)} to "${s.name}".`,
+          });
+        } catch (err: any) {
+          setAlertData({ title: 'Could not add SIP', message: err?.message ?? 'Please try again.' });
+        }
+      },
+    });
+  }
+
   function deletePlatform(id: string, name: string) {
     setAlertData({
       title: 'Delete Platform',
@@ -180,9 +224,10 @@ export default function SavingsScreen() {
         <AddSavingSheet
           visible
           mode={sheetMode}
+          editing={editingPayload}
           platforms={platforms.map(p => ({ id: p.id, name: p.name, balance: p.balance }))}
-          onClose={() => setSheetMode(null)}
-          onSuccess={() => { invalidate(); setSheetMode(null); }}
+          onClose={closeSheet}
+          onSuccess={() => { invalidate(); closeSheet(); }}
         />
       )}
 
@@ -217,7 +262,7 @@ export default function SavingsScreen() {
         {/* ── Platforms ───────────────────────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Platforms</Text>
-          <TouchableOpacity style={styles.addBtn} onPress={() => setSheetMode('platform')}>
+          <TouchableOpacity style={styles.addBtn} onPress={openAddPlatform}>
             <Text style={styles.addBtnText}>+ Add</Text>
           </TouchableOpacity>
         </View>
@@ -258,7 +303,7 @@ export default function SavingsScreen() {
         {/* ── Investments ─────────────────────────────────────────────── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Investments</Text>
-          <TouchableOpacity style={styles.addBtn} onPress={() => setSheetMode('saving')}>
+          <TouchableOpacity style={styles.addBtn} onPress={openAddSaving}>
             <Text style={styles.addBtnText}>+ Add</Text>
           </TouchableOpacity>
         </View>
@@ -273,7 +318,7 @@ export default function SavingsScreen() {
             const meta = TYPE_META[s.type] ?? { label: s.type, icon: '📦' };
             const gain = s.gainLoss >= 0;
             return (
-              <View key={s.id} style={styles.savingCard}>
+              <TouchableOpacity key={s.id} style={styles.savingCard} activeOpacity={0.7} onPress={() => openEditSaving(s)}>
                 <View style={styles.savingHeader}>
                   <View style={styles.savingIconBox}>
                     <Text style={styles.savingIcon}>{meta.icon}</Text>
@@ -294,11 +339,18 @@ export default function SavingsScreen() {
                     Invested {formatINR(s.investedAmount)}
                     {s.charges > 0 ? ` + ${formatINR(s.charges)} charges` : ''}
                   </Text>
-                  <TouchableOpacity onPress={() => deleteSaving(s.id, s.name)}>
-                    <Text style={styles.deleteIcon}>🗑️</Text>
-                  </TouchableOpacity>
+                  <View style={styles.savingActions}>
+                    {s.sipAmount ? (
+                      <TouchableOpacity style={styles.sipBtn} onPress={() => contributeSip(s)}>
+                        <Text style={styles.sipBtnText}>+ {formatINR(s.sipAmount)}/mo</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                    <TouchableOpacity onPress={() => deleteSaving(s.id, s.name)}>
+                      <Text style={styles.deleteIcon}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
@@ -368,7 +420,10 @@ const makeStyles = (c: Theme) => StyleSheet.create({
   savingCurrentValue: { fontSize: 14, fontWeight: '700', color: c.text },
   savingGainLoss: { fontSize: 11, fontWeight: '600', marginTop: 1 },
   savingFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.cardBorder },
-  savingDetail: { fontSize: 11, color: c.textFaint },
+  savingDetail: { fontSize: 11, color: c.textFaint, flex: 1 },
+  savingActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  sipBtn: { backgroundColor: c.primary, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 5 },
+  sipBtnText: { color: c.onColor, fontSize: 12, fontWeight: '700' },
 
   deleteIcon: { fontSize: 16 },
   positive: { color: c.success },

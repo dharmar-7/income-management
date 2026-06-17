@@ -6,6 +6,7 @@ import { CreatePlatformDto } from './dto/create-platform.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { CreateSavingDto } from './dto/create-saving.dto';
 import { UpdateSavingDto } from './dto/update-saving.dto';
+import { ContributeSavingDto } from './dto/contribute-saving.dto';
 
 @Controller('savings')
 @UseGuards(ClerkAuthGuard)
@@ -53,6 +54,12 @@ export class SavingsController {
   @Patch(':id')
   updateSaving(@CurrentUser() userId: string, @Param('id') id: string, @Body() dto: UpdateSavingDto) {
     return this.service.updateSaving(userId, id, dto);
+  }
+
+  // Add one month's SIP (or an explicit amount) to an investment
+  @Post(':id/contribute')
+  contribute(@CurrentUser() userId: string, @Param('id') id: string, @Body() dto: ContributeSavingDto) {
+    return this.service.contribute(userId, id, dto.amount);
   }
 
   @Delete(':id')

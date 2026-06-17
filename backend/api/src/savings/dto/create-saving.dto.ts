@@ -20,9 +20,19 @@ export class CreateSavingDto {
   @Min(0)
   charges: number;
 
+  // Optional — defaults to the invested amount (a brand-new investment is worth
+  // what you put in until you update its market value).
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  currentValue: number;
+  currentValue?: number;
+
+  // Optional monthly SIP amount. When set, the app shows a "+" button to add
+  // one month's contribution in a tap.
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  sipAmount?: number;
 
   @IsDateString()
   startDate: string;
