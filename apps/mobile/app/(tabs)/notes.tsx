@@ -896,12 +896,6 @@ export default function NotesScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <View style={styles.bgBlob1} />
-        <View style={styles.bgBlob2} />
-        <View style={styles.bgBlob3} />
-      </View>
-
       <PasswordModal
         visible={unlockingNote !== null}
         mode="enter"
@@ -1114,10 +1108,6 @@ const makeStyles = (c: Theme) => StyleSheet.create({
 
   toolRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   toolLabel: { fontSize: 12, color: INK_MUTED, width: 58 },
-
-  bgBlob1: { position: 'absolute', top: -120, left: -80,  width: 380, height: 380, borderRadius: 190, backgroundColor: 'rgba(139,92,246,0.45)' },
-  bgBlob2: { position: 'absolute', top: 280,  right: -80, width: 340, height: 340, borderRadius: 170, backgroundColor: 'rgba(236,72,153,0.38)' },
-  bgBlob3: { position: 'absolute', bottom: -80, left: 40, width: 360, height: 360, borderRadius: 180, backgroundColor: 'rgba(6,182,212,0.32)'  },
 
   colorRow: { flexDirection: 'row', gap: 8, paddingRight: 8 },
   colorDot: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.1)', overflow: 'hidden' },
