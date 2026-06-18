@@ -12,6 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { apiFetch } from '@/lib/api';
 import AddSavingSheet, { type EditingSaving } from '@/components/AddSavingSheet';
+import AddGoalSheet from '@/components/AddGoalSheet';
+import ContributeGoalSheet from '@/components/ContributeGoalSheet';
 import AppAlert from '@/components/AppAlert';
 import { useTheme } from '@/context/ThemeContext';
 import type { Theme } from '@/lib/theme';
@@ -58,6 +60,19 @@ interface Summary {
   count: number;
 }
 
+interface Goal {
+  id: string;
+  name: string;
+  icon: string;
+  targetAmount: number;
+  savedAmount: number;
+  targetDate: string | null;
+  note: string | null;
+  remaining: number;
+  percent: number;
+  reached: boolean;
+}
+
 const TYPE_META: Record<SavingType, { label: string; icon: string }> = {
   POST_OFFICE:       { label: 'Post Office',    icon: '📮' },
   FIXED_DEPOSIT:     { label: 'Fixed Deposit',  icon: '🏦' },
@@ -88,6 +103,9 @@ export default function SavingsScreen() {
 
   const [sheetMode, setSheetMode] = useState<'platform' | 'saving' | null>(null);
   const [editingSaving, setEditingSaving] = useState<Saving | null>(null);
+  const [goalSheetOpen, setGoalSheetOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [contributingGoal, setContributingGoal] = useState<Goal | null>(null);
   const [alertData, setAlertData] = useState<{
     title: string; message: string;
     confirmLabel?: string; confirmDestructive?: boolean;
@@ -98,12 +116,36 @@ export default function SavingsScreen() {
     queryClient.invalidateQueries({ queryKey: ['savings-summary'] });
     queryClient.invalidateQueries({ queryKey: ['savings-platforms'] });
     queryClient.invalidateQueries({ queryKey: ['savings-list'] });
+    queryClient.invalidateQueries({ queryKey: ['goals'] });
+    queryClient.invalidateQueries({ queryKey: ['networth'] }); // goals/investments feed net worth
   };
 
   function openAddPlatform() { setEditingSaving(null); setSheetMode('platform'); }
   function openAddSaving() { setEditingSaving(null); setSheetMode('saving'); }
   function openEditSaving(s: Saving) { setEditingSaving(s); setSheetMode('saving'); }
   function closeSheet() { setSheetMode(null); setEditingSaving(null); }
+
+  function openAddGoal() { setEditingGoal(null); setGoalSheetOpen(true); }
+  function openEditGoal(g: Goal) { setEditingGoal(g); setGoalSheetOpen(true); }
+  function closeGoalSheet() { setGoalSheetOpen(false); setEditingGoal(null); }
+
+  function deleteGoal(g: Goal) {
+    setAlertData({
+      title: 'Delete Goal',
+      message: `Delete "${g.name}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      confirmDestructive: true,
+      onConfirm: async () => {
+        try {
+          const token = await getToken();
+          await apiFetch(`/goals/${g.id}`, token!, { method: 'DELETE' });
+          invalidate();
+        } catch {
+          setAlertData({ title: 'Error', message: 'Failed to delete goal.' });
+        }
+      },
+    });
+  }
 
   // Map the list row into the shape the edit form needs (platform → platformId).
   const editingPayload: EditingSaving | null = editingSaving ? {
@@ -147,12 +189,22 @@ export default function SavingsScreen() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const isRefreshing = summaryQuery.isFetching || savingsQuery.isFetching || platformsQuery.isFetching;
+  const goalsQuery = useQuery({
+    queryKey: ['goals'],
+    queryFn: async () => {
+      const token = await getToken();
+      return apiFetch<Goal[]>('/goals', token!);
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const isRefreshing = summaryQuery.isFetching || savingsQuery.isFetching || platformsQuery.isFetching || goalsQuery.isFetching;
 
   function handleRefresh() {
     summaryQuery.refetch();
     platformsQuery.refetch();
     savingsQuery.refetch();
+    goalsQuery.refetch();
   }
 
   function deleteSaving(id: string, name: string) {
@@ -216,6 +268,7 @@ export default function SavingsScreen() {
   const sum = summaryQuery.data;
   const platforms = platformsQuery.data ?? [];
   const savings = savingsQuery.data ?? [];
+  const goals = goalsQuery.data ?? [];
   const isGain = (sum?.totalGainLoss ?? 0) >= 0;
 
   return (
@@ -228,6 +281,25 @@ export default function SavingsScreen() {
           platforms={platforms.map(p => ({ id: p.id, name: p.name, balance: p.balance }))}
           onClose={closeSheet}
           onSuccess={() => { invalidate(); closeSheet(); }}
+        />
+      )}
+
+      {goalSheetOpen && (
+        <AddGoalSheet
+          visible
+          editing={editingGoal}
+          onClose={closeGoalSheet}
+          onSuccess={() => { invalidate(); closeGoalSheet(); }}
+        />
+      )}
+
+      {contributingGoal && (
+        <ContributeGoalSheet
+          visible
+          goalId={contributingGoal.id}
+          goalName={contributingGoal.name}
+          onClose={() => setContributingGoal(null)}
+          onSuccess={() => { invalidate(); setContributingGoal(null); }}
         />
       )}
 
@@ -355,6 +427,58 @@ export default function SavingsScreen() {
           })
         )}
 
+        {/* ── Goals ───────────────────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Goals</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={openAddGoal}>
+            <Text style={styles.addBtnText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
+
+        {goals.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No goals yet.</Text>
+            <Text style={styles.emptyHint}>Set a target like an emergency fund or a trip.</Text>
+          </View>
+        ) : (
+          goals.map(g => (
+            <TouchableOpacity key={g.id} style={styles.savingCard} activeOpacity={0.7} onPress={() => openEditGoal(g)}>
+              <View style={styles.savingHeader}>
+                <View style={styles.savingIconBox}>
+                  <Text style={styles.savingIcon}>{g.icon}</Text>
+                </View>
+                <View style={styles.savingMeta}>
+                  <Text style={styles.savingName} numberOfLines={1}>{g.name}</Text>
+                  <Text style={styles.savingType}>
+                    {g.reached ? '🎉 Reached!' : `${formatINR(g.remaining)} to go`}
+                    {g.targetDate ? ` · by ${new Date(g.targetDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}` : ''}
+                  </Text>
+                </View>
+                <View style={styles.savingValues}>
+                  <Text style={styles.savingCurrentValue}>{formatINR(g.savedAmount)}</Text>
+                  <Text style={styles.goalTarget}>of {formatINR(g.targetAmount)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.goalTrack}>
+                <View style={[styles.goalFill, { width: `${g.percent}%`, backgroundColor: g.reached ? c.success : c.primary }]} />
+              </View>
+
+              <View style={styles.savingFooter}>
+                <Text style={styles.savingDetail}>{g.percent.toFixed(0)}% saved</Text>
+                <View style={styles.savingActions}>
+                  <TouchableOpacity style={styles.sipBtn} onPress={() => setContributingGoal(g)}>
+                    <Text style={styles.sipBtnText}>+ Add money</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => deleteGoal(g)}>
+                    <Text style={styles.deleteIcon}>🗑️</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+
         <View style={{ height: 24 }} />
       </ScrollView>
       <AppAlert
@@ -418,6 +542,9 @@ const makeStyles = (c: Theme) => StyleSheet.create({
   savingType: { fontSize: 11, color: c.textFaint, marginTop: 1 },
   savingValues: { alignItems: 'flex-end' },
   savingCurrentValue: { fontSize: 14, fontWeight: '700', color: c.text },
+  goalTarget: { fontSize: 11, color: c.textFaint, marginTop: 1 },
+  goalTrack: { height: 8, backgroundColor: c.track, borderRadius: 99, overflow: 'hidden', marginTop: 10 },
+  goalFill: { height: '100%', borderRadius: 99 },
   savingGainLoss: { fontSize: 11, fontWeight: '600', marginTop: 1 },
   savingFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: c.cardBorder },
   savingDetail: { fontSize: 11, color: c.textFaint, flex: 1 },

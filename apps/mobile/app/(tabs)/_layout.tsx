@@ -32,6 +32,8 @@ export default function TabLayout() {
       <Tabs.Screen name="recurring"    options={{ title: 'Recurring'     }} />
       <Tabs.Screen name="loans"        options={{ title: 'Loans'         }} />
       <Tabs.Screen name="settlements"  options={{ title: 'Settlements'   }} />
+      <Tabs.Screen name="calendar"     options={{ title: 'Calendar'      }} />
+      <Tabs.Screen name="documents"    options={{ title: 'Documents'     }} />
     </Tabs>
   );
 }

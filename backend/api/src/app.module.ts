@@ -27,6 +27,8 @@ import { SettlementsModule } from './settlements/settlements.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { StreaksModule } from './streaks/streaks.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { DocumentsModule } from './documents/documents.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     CalendarModule,
     StreaksModule,
     DashboardModule,
+    DocumentsModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [

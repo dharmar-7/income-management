@@ -34,6 +34,8 @@ const MORE_ITEMS = [
   { label: 'Recurring',   icon: '🔄', route: 'recurring'   },
   { label: 'Loans',       icon: '🏦', route: 'loans'       },
   { label: 'Settlements', icon: '🤝', route: 'settlements' },
+  { label: 'Calendar',    icon: '📅', route: 'calendar'    },
+  { label: 'Documents',   icon: '🗂️', route: 'documents'   },
 ];
 
 export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps) {

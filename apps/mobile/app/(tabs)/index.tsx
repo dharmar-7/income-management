@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { apiFetch } from '@/lib/api';
 import CashSheet from '@/components/CashSheet';
+import EventsTicker from '@/components/EventsTicker';
+import Celebration from '@/components/Celebration';
 import { useTheme } from '@/context/ThemeContext';
 import type { Theme } from '@/lib/theme';
 
@@ -125,6 +127,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <Celebration />
       {cashMode && (
         <CashSheet
           visible
@@ -157,6 +160,9 @@ export default function DashboardScreen() {
             <Text style={styles.themeToggleIcon}>{scheme === 'dark' ? '☀️' : '🌙'}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Occasions running ticker */}
+        <EventsTicker />
 
         {/* Summary cards */}
         {isLoading ? (

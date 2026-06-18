@@ -12,6 +12,7 @@ export interface Theme {
   cardBorder: string;  // hairline borders on cards
   inputBg: string;
   inputBorder: string;
+  border: string;      // general-purpose border (alias of inputBorder)
   chipBg: string;
   chipBorder: string;
   track: string;       // progress tracks / skeletons
@@ -59,6 +60,7 @@ export const lightTheme: Theme = {
   cardBorder: '#f3f4f6',
   inputBg: '#ffffff',
   inputBorder: '#e5e7eb',
+  border: '#e5e7eb',
   chipBg: '#f9fafb',
   chipBorder: '#e5e7eb',
   track: '#f3f4f6',
@@ -80,6 +82,7 @@ export const darkTheme: Theme = {
   cardBorder: 'rgba(255,255,255,0.08)',
   inputBg: '#1b1d28',
   inputBorder: 'rgba(255,255,255,0.14)',
+  border: 'rgba(255,255,255,0.14)',
   chipBg: 'rgba(255,255,255,0.05)',
   chipBorder: 'rgba(255,255,255,0.12)',
   track: 'rgba(255,255,255,0.10)',

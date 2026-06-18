@@ -42,6 +42,8 @@ model User {
   recurringTransactions RecurringTransaction[]
   loans                 Loan[]
   settlements           Settlement[]
+  documents             Document[]
+  events                Event[]
 }
 
 // ─────────────────────────────────────────
@@ -462,4 +464,62 @@ enum SettlementStatus {
   PENDING    // waiting for repayment
   SETTLED    // repayment received/made
   CANCELLED  // manually cancelled — no repayment expected
+}
+
+// ─────────────────────────────────────────
+// DOCUMENT
+// A stored important document — insurance, ID,
+// vehicle papers, warranty, receipt. Binary held
+// in the DB (same approach as note images).
+// ─────────────────────────────────────────
+model Document {
+  id        String    @id @default(uuid())
+  name      String                             // user-given name
+  category  String    @default("Other")        // Insurance, ID, Vehicle, Warranty, Receipt, Other
+  data      Bytes                              // raw binary (image/pdf)
+  mimeType  String                             // "image/jpeg", "application/pdf", …
+  size      Int                                // bytes — capped in the service
+  note      String?
+  expiresAt DateTime?                          // optional renewal/expiry date
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+}
+
+// ─────────────────────────────────────────
+// EVENT
+// A memorable occasion (birthday, anniversary)
+// that recurs yearly. `isSelf` events trigger an
+// app-open celebration; others just notify/remind.
+// ─────────────────────────────────────────
+model Event {
+  id               String    @id @default(uuid())
+  title            String                          // "My Birthday", "Brother's Birthday"
+  type             EventType @default(BIRTHDAY)
+  date             DateTime                         // original date — month/day drive the yearly recurrence
+  isSelf           Boolean   @default(false)        // about the user → confetti on app open
+  personName       String?                          // whose occasion ("Brother", "Mom")
+  notifyDaysBefore Int       @default(0)            // remind N days before (0 = on the day)
+  note             String?
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum EventType {
+  BIRTHDAY
+  ANNIVERSARY
+  MEMORIAL
+  FESTIVAL
+  CUSTOM
 }
