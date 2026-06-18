@@ -29,6 +29,8 @@ export default function TabLayout() {
       <Tabs.Screen name="reports"      options={{ title: 'Reports'       }} />
       <Tabs.Screen name="settings"     options={{ title: 'Settings'      }} />
       <Tabs.Screen name="import"       options={{ title: 'Import'        }} />
+      <Tabs.Screen name="recurring"    options={{ title: 'Recurring'     }} />
+      <Tabs.Screen name="loans"        options={{ title: 'Loans'         }} />
     </Tabs>
   );
 }

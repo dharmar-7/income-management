@@ -27,10 +27,12 @@ const LABELS: Record<MainRoute, string> = {
 };
 
 const MORE_ITEMS = [
-  { label: 'Notes',    icon: '📝', route: 'notes'    },
-  { label: 'Reports',  icon: '📊', route: 'reports'  },
-  { label: 'Import',   icon: '📥', route: 'import'   },
-  { label: 'Settings', icon: '⚙️', route: 'settings' },
+  { label: 'Notes',      icon: '📝', route: 'notes'      },
+  { label: 'Reports',    icon: '📊', route: 'reports'    },
+  { label: 'Import',     icon: '📥', route: 'import'     },
+  { label: 'Settings',   icon: '⚙️', route: 'settings'   },
+  { label: 'Recurring',  icon: '🔄', route: 'recurring'  },
+  { label: 'Loans',      icon: '🏦', route: 'loans'      },
 ];
 
 export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps) {
@@ -222,7 +224,7 @@ const s = StyleSheet.create({
     gap: 6,
   },
   pitem: {
-    width: '47%',
+    width: '31%',
     alignItems: 'center',
     gap: 4,
     paddingVertical: 12,

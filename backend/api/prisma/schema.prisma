@@ -31,12 +31,16 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  transactions        Transaction[]
-  budgets             Budget[]
-  cashTransactions    CashTransaction[]
-  investmentPlatforms InvestmentPlatform[]
-  savings             Saving[]
-  notes               Note[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  cashTransactions      CashTransaction[]
+  investmentPlatforms   InvestmentPlatform[]
+  savings               Saving[]
+  notes                 Note[]
+  goals                 Goal[]
+  netWorthSnapshots     NetWorthSnapshot[]
+  recurringTransactions RecurringTransaction[]
+  loans                 Loan[]
 }
 
 // ─────────────────────────────────────────
@@ -50,8 +54,9 @@ model Category {
   icon  String?                             // optional emoji or icon name
 
   // Relations
-  transactions Transaction[]
-  budgets      Budget[]
+  transactions          Transaction[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
 }
 
 // ─────────────────────────────────────────
@@ -282,4 +287,140 @@ model NoteImage {
 
   noteId    String
   note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────
+// GOAL
+// A savings goal — a target amount the user is
+// working toward, with progress tracked manually.
+// ─────────────────────────────────────────
+model Goal {
+  id           String    @id @default(uuid())
+  name         String                             // e.g. "Emergency fund", "Goa trip"
+  icon         String    @default("🎯")           // emoji shown on the goal card
+  targetAmount Float                              // how much they want to reach
+  savedAmount  Float     @default(0)              // progress so far (manual / via contribute)
+  targetDate   DateTime?                          // optional "by when"
+  note         String?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────
+// NET WORTH SNAPSHOT
+// One stored data point per user per month, so a
+// net-worth trend can build up over time (historical
+// net worth can't be reconstructed, so we record it
+// going forward).
+// ─────────────────────────────────────────
+model NetWorthSnapshot {
+  id          String   @id @default(uuid())
+  year        Int
+  month       Int                                 // 1-12
+  cash        Float                               // cash-in-hand balance at capture
+  investments Float                               // total investment current value at capture
+  netWorth    Float                               // cash + investments
+  capturedAt  DateTime @default(now())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, month])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────
+// RECURRING TRANSACTION
+// Bills, subscriptions and income that repeat
+// on a fixed schedule (rent, Netflix, salary).
+// ─────────────────────────────────────────
+model RecurringTransaction {
+  id          String             @id @default(uuid())
+  name        String
+  amount      Float
+  type        TransactionType
+  frequency   RecurringFrequency
+  dayOfMonth  Int?               // for MONTHLY: 1–28
+  dayOfWeek   Int?               // for WEEKLY: 0 (Sun)–6 (Sat)
+  startDate   DateTime
+  nextDueDate DateTime
+  isActive    Boolean            @default(true)
+  note        String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  categoryId  String?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([userId, nextDueDate])
+  @@index([userId, isActive])
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// ─────────────────────────────────────────
+// LOAN / EMI
+// Tracks a loan — home, car, personal, etc.
+// Each payment is stored in LoanPayment so
+// outstanding balance can be computed exactly.
+// ─────────────────────────────────────────
+model Loan {
+  id              String   @id @default(uuid())
+  name            String
+  loanType        LoanType
+  lender          String
+  principalAmount Float
+  interestRate    Float    // annual % (e.g. 8.5 for 8.5%)
+  tenure          Int      // total EMIs (months)
+  emiAmount       Float    // monthly EMI in INR
+  emiDay          Int      // day of month EMI is due (1–28)
+  startDate       DateTime // disbursement / first EMI date
+  isActive        Boolean  @default(true)
+  note            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId   String
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments LoanPayment[]
+
+  @@index([userId, isActive])
+}
+
+model LoanPayment {
+  id       String   @id @default(uuid())
+  amount   Float
+  paidDate DateTime
+
+  createdAt DateTime @default(now())
+
+  loanId String
+  loan   Loan   @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId, paidDate])
+}
+
+enum LoanType {
+  HOME_LOAN
+  CAR_LOAN
+  PERSONAL_LOAN
+  EDUCATION_LOAN
+  TWO_WHEELER_LOAN
+  CREDIT_CARD_EMI
+  OTHER
 }

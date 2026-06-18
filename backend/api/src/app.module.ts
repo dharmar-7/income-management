@@ -19,6 +19,8 @@ import { CashModule } from './cash/cash.module';
 import { SmsModule } from './sms/sms.module';
 import { SavingsModule } from './savings/savings.module';
 import { NotesModule } from './notes/notes.module';
+import { RecurringModule } from './recurring/recurring.module';
+import { LoansModule } from './loans/loans.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { NotesModule } from './notes/notes.module';
     SmsModule,
     SavingsModule,
     NotesModule,
+    RecurringModule,
+    LoansModule,
   ],
   controllers: [AppController],
   providers: [
