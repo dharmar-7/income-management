@@ -33,7 +33,7 @@ interface Transaction {
   merchant: string;
   amount: number;
   date: string;
-  type: 'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT';
+  type: 'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT' | 'TRANSFER';
   source: 'TAKEOUT' | 'GMAIL' | 'MANUAL' | 'SMS';
   description: string | null;
   category: { id: string; name: string; icon: string } | null;

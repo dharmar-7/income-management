@@ -41,6 +41,7 @@ model User {
   netWorthSnapshots     NetWorthSnapshot[]
   recurringTransactions RecurringTransaction[]
   loans                 Loan[]
+  settlements           Settlement[]
 }
 
 // ─────────────────────────────────────────
@@ -155,6 +156,7 @@ enum TransactionType {
   CREDIT     // money coming in (someone paid you)
   REFUND     // partial/full refund — reduces expenses, not counted as income
   INVESTMENT // transfer to investment platform — excluded from all summary calculations
+  TRANSFER   // peer-to-peer transfer (e.g. sent to friend, returned) — excluded from income/expense
 }
 
 enum ImportSource {
@@ -423,4 +425,41 @@ enum LoanType {
   TWO_WHEELER_LOAN
   CREDIT_CARD_EMI
   OTHER
+}
+
+// ─────────────────────────────────────────
+// SETTLEMENT
+// Tracks peer-to-peer money transfers — money sent
+// to / received from a person that is expected to
+// be returned. Both linked transactions get type=TRANSFER
+// so they are excluded from income/expense calculations.
+// ─────────────────────────────────────────
+model Settlement {
+  id          String           @id @default(uuid())
+  personName  String
+  amount      Float
+  direction   String           // 'SENT' (you paid them) or 'RECEIVED' (they paid you)
+  status      SettlementStatus @default(PENDING)
+  note        String?
+  transferredAt DateTime       // when the initial transfer happened
+  settledAt     DateTime?      // when it was repaid/settled
+
+  // Linked transaction IDs — optional, but when set the tx type becomes TRANSFER
+  originalTxId  String? @unique  // the initial transfer transaction
+  repaymentTxId String? @unique  // the repayment transaction
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, personName])
+}
+
+enum SettlementStatus {
+  PENDING    // waiting for repayment
+  SETTLED    // repayment received/made
+  CANCELLED  // manually cancelled — no repayment expected
 }

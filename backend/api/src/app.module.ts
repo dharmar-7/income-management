@@ -21,6 +21,9 @@ import { SavingsModule } from './savings/savings.module';
 import { NotesModule } from './notes/notes.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { LoansModule } from './loans/loans.module';
+import { GoalsModule } from './goals/goals.module';
+import { NetworthModule } from './networth/networth.module';
+import { SettlementsModule } from './settlements/settlements.module';
 
 @Module({
   imports: [
@@ -42,6 +45,9 @@ import { LoansModule } from './loans/loans.module';
     NotesModule,
     RecurringModule,
     LoansModule,
+    GoalsModule,
+    NetworthModule,
+    SettlementsModule,
   ],
   controllers: [AppController],
   providers: [

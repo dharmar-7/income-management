@@ -24,7 +24,7 @@ interface Category {
   icon: string;
 }
 
-type TxType = 'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT';
+type TxType = 'DEBIT' | 'CREDIT' | 'REFUND' | 'INVESTMENT' | 'TRANSFER';
 
 // The subset of a transaction the sheet needs to pre-fill the edit form.
 export interface EditingTransaction {

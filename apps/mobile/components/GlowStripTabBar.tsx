@@ -27,12 +27,13 @@ const LABELS: Record<MainRoute, string> = {
 };
 
 const MORE_ITEMS = [
-  { label: 'Notes',      icon: '📝', route: 'notes'      },
-  { label: 'Reports',    icon: '📊', route: 'reports'    },
-  { label: 'Import',     icon: '📥', route: 'import'     },
-  { label: 'Settings',   icon: '⚙️', route: 'settings'   },
-  { label: 'Recurring',  icon: '🔄', route: 'recurring'  },
-  { label: 'Loans',      icon: '🏦', route: 'loans'      },
+  { label: 'Notes',       icon: '📝', route: 'notes'       },
+  { label: 'Reports',     icon: '📊', route: 'reports'     },
+  { label: 'Import',      icon: '📥', route: 'import'      },
+  { label: 'Settings',    icon: '⚙️', route: 'settings'    },
+  { label: 'Recurring',   icon: '🔄', route: 'recurring'   },
+  { label: 'Loans',       icon: '🏦', route: 'loans'       },
+  { label: 'Settlements', icon: '🤝', route: 'settlements' },
 ];
 
 export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps) {
@@ -62,10 +63,15 @@ export default function GlowStripTabBar({ state, navigation }: BottomTabBarProps
         <Pressable style={s.overlay} onPress={() => setOpen(false)}>
           <View style={[s.popup, { bottom: bottom + 80 }, dark ? s.popupDark : s.popupLight]}>
             <View style={s.pgrid}>
-              {MORE_ITEMS.map(item => (
+              {MORE_ITEMS.map((item, idx) => (
                 <TouchableOpacity
                   key={item.label}
-                  style={[s.pitem, dark ? s.pitemDark : s.pitemLight]}
+                  style={[
+                    s.pitem,
+                    dark ? s.pitemDark : s.pitemLight,
+                    // Last item alone in a row → stretch full width
+                    MORE_ITEMS.length % 3 === 1 && idx === MORE_ITEMS.length - 1 && s.pitemFull,
+                  ]}
                   onPress={() => {
                     setOpen(false);
                     if (item.route) jumpTo(item.route);
@@ -233,6 +239,7 @@ const s = StyleSheet.create({
   },
   pitemDark:  { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.07)' },
   pitemLight: { backgroundColor: 'rgba(99,102,241,0.06)',  borderColor: 'rgba(99,102,241,0.12)'  },
+  pitemFull:  { width: '100%' },
   picon:  { fontSize: 22 },
   plabel: { fontSize: 11, fontWeight: '700' },
 });
