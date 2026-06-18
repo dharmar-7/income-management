@@ -18,14 +18,6 @@ import type { Theme } from '@/lib/theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Summary {
-  totalIncome: number;
-  totalExpenses: number;
-  netSavings: number;
-  month: number;
-  year: number;
-}
-
 interface CategoryData {
   category: { name: string; icon: string };
   total: number;
@@ -47,16 +39,30 @@ interface BudgetWithProgress {
   percentUsed: number;
 }
 
-interface BudgetsResponse {
-  data: BudgetWithProgress[];
-}
-
-interface SavingsSummary {
-  totalNetCost: number;
-  totalCurrentValue: number;
-  totalGainLoss: number;
-  totalGainPercent: number;
-  count: number;
+interface DashboardOverview {
+  summary: {
+    month: number; year: number;
+    totalIncome: number; totalExpenses: number;
+    totalRefunds: number; totalInvestments: number;
+    netSavings: number;
+  };
+  categories: CategoryData[];
+  monthly: MonthData[];
+  budgets: { data: BudgetWithProgress[]; month: number; year: number };
+  cash: { balance: number; totalIn: number; totalOut: number };
+  savings: {
+    totalNetCost: number; totalCurrentValue: number;
+    totalGainLoss: number; totalGainPercent: number; count: number;
+  };
+  networth: {
+    cash: number; investments: number; netWorth: number;
+    history: { year: number; month: number; netWorth: number }[];
+  };
+  streaks: {
+    currentStreak: number; longestStreak: number; activeToday: boolean;
+    unlockedCount: number; total: number;
+    achievements: { key: string; title: string; icon: string; unlocked: boolean; hint: string }[];
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -94,78 +100,28 @@ export default function DashboardScreen() {
   const { getToken } = useAuth();
   const { user } = useUser();
   const router = useRouter();
-
-  const summaryQuery = useQuery({
-    queryKey: ['summary'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<Summary>('/transactions/summary', token!);
-    },
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const categoryQuery = useQuery({
-    queryKey: ['by-category'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<CategoryData[]>('/transactions/by-category', token!);
-    },
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const monthlyQuery = useQuery({
-    queryKey: ['by-month'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<MonthData[]>('/transactions/by-month', token!);
-    },
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const budgetsQuery = useQuery({
-    queryKey: ['budget-progress'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<BudgetsResponse>('/budgets', token!);
-    },
-    staleTime: 2 * 60 * 1000,
-  });
-
   const queryClient = useQueryClient();
   const [cashMode, setCashMode] = useState<'add' | 'spend' | null>(null);
 
-  const cashQuery = useQuery({
-    queryKey: ['cash-balance'],
+  // Single aggregate call — replaces 8 parallel queries.
+  // The backend fires all DB queries in one Promise.all so wall-clock ≈ slowest single query.
+  const dashQuery = useQuery({
+    queryKey: ['dashboard'],
     queryFn: async () => {
       const token = await getToken();
-      return apiFetch<{ balance: number; totalIn: number; totalOut: number }>('/cash/balance', token!);
+      return apiFetch<DashboardOverview>('/dashboard/overview', token!);
     },
     staleTime: 2 * 60 * 1000,
   });
 
-  const savingsQuery = useQuery({
-    queryKey: ['savings-summary'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<SavingsSummary>('/savings/summary', token!);
-    },
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const isRefreshing = summaryQuery.isFetching || categoryQuery.isFetching || monthlyQuery.isFetching;
+  const d = dashQuery.data;
+  const isLoading = dashQuery.isLoading;
+  const isRefreshing = dashQuery.isFetching;
+  const cashBalance = d?.cash.balance ?? 0;
 
   function handleRefresh() {
-    summaryQuery.refetch();
-    categoryQuery.refetch();
-    monthlyQuery.refetch();
-    budgetsQuery.refetch();
-    cashQuery.refetch();
-    savingsQuery.refetch();
+    dashQuery.refetch();
   }
-
-  const s = summaryQuery.data;
-
-  const cashBalance = cashQuery.data?.balance ?? 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -175,7 +131,7 @@ export default function DashboardScreen() {
           mode={cashMode}
           currentBalance={cashBalance}
           onClose={() => setCashMode(null)}
-          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['cash-balance'] })}
+          onSuccess={() => queryClient.invalidateQueries({ queryKey: ['dashboard'] })}
         />
       )}
       <ScrollView
@@ -187,7 +143,9 @@ export default function DashboardScreen() {
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.greeting}>Hey, {user?.firstName ?? 'there'} 👋</Text>
-            {s && <Text style={styles.subGreeting}>{MONTHS[s.month]} {s.year} summary</Text>}
+            {d?.summary && (
+              <Text style={styles.subGreeting}>{MONTHS[d.summary.month]} {d.summary.year} summary</Text>
+            )}
           </View>
           <TouchableOpacity
             style={styles.themeToggle}
@@ -201,33 +159,67 @@ export default function DashboardScreen() {
         </View>
 
         {/* Summary cards */}
-        {summaryQuery.isLoading ? (
+        {isLoading ? (
           <View style={styles.skeletonRow}>
             {[1, 2, 3].map(i => <View key={i} style={styles.skeleton} />)}
           </View>
-        ) : s ? (
+        ) : d?.summary ? (
           <>
             <View style={styles.cardsRow}>
-              <SummaryCard label="Income" value={formatINR(s.totalIncome)} color={c.onColor} bg="#10b981" />
-              <SummaryCard label="Expenses" value={formatINR(s.totalExpenses)} color={c.onColor} bg="#f43f5e" />
+              <SummaryCard label="Income"   value={formatINR(d.summary.totalIncome)}   color={c.onColor} bg="#10b981" />
+              <SummaryCard label="Expenses" value={formatINR(d.summary.totalExpenses)} color={c.onColor} bg="#f43f5e" />
               <SummaryCard
                 label="Savings"
-                value={formatINR(s.netSavings)}
+                value={formatINR(d.summary.netSavings)}
                 color={c.onColor}
-                bg={s.netSavings >= 0 ? c.primary : c.orange}
+                bg={d.summary.netSavings >= 0 ? c.primary : c.orange}
               />
             </View>
 
-            {/* Income vs Expenses visual bar */}
-            {(s.totalIncome > 0 || s.totalExpenses > 0) && (
+            {(d.summary.totalIncome > 0 || d.summary.totalExpenses > 0) && (
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>Income vs Expenses</Text>
-                <BarRow label="Income" amount={s.totalIncome} max={Math.max(s.totalIncome, s.totalExpenses)} color={c.success} />
-                <BarRow label="Expenses" amount={s.totalExpenses} max={Math.max(s.totalIncome, s.totalExpenses)} color={c.danger} />
+                <BarRow
+                  label="Income"
+                  amount={d.summary.totalIncome}
+                  max={Math.max(d.summary.totalIncome, d.summary.totalExpenses)}
+                  color={c.success}
+                />
+                <BarRow
+                  label="Expenses"
+                  amount={d.summary.totalExpenses}
+                  max={Math.max(d.summary.totalIncome, d.summary.totalExpenses)}
+                  color={c.danger}
+                />
               </View>
             )}
           </>
         ) : null}
+
+        {/* Net Worth hero */}
+        {d?.networth && (() => {
+          const nw = d.networth;
+          const max = Math.max(...nw.history.map(h => h.netWorth), 1);
+          return (
+            <View style={styles.netWorthCard}>
+              <Text style={styles.netWorthLabel}>💎 Net Worth</Text>
+              <Text style={styles.netWorthValue}>{formatINR(nw.netWorth)}</Text>
+              <View style={styles.netWorthBreakdown}>
+                <Text style={styles.netWorthBreakdownItem}>💵 Cash {formatINR(nw.cash)}</Text>
+                <Text style={styles.netWorthBreakdownItem}>📊 Investments {formatINR(nw.investments)}</Text>
+              </View>
+              {nw.history.length > 1 && (
+                <View style={styles.sparkRow}>
+                  {nw.history.map((h, i) => (
+                    <View key={i} style={styles.sparkCol}>
+                      <View style={[styles.sparkBar, { height: `${Math.max(4, (h.netWorth / max) * 100)}%` }]} />
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })()}
 
         {/* Cash in Hand card */}
         <View style={styles.cashCard}>
@@ -235,11 +227,11 @@ export default function DashboardScreen() {
             <View>
               <Text style={styles.cashLabel}>💵 Cash in Hand</Text>
               <Text style={styles.cashBalance}>
-                {cashQuery.isLoading ? '…' : formatINR(cashBalance)}
+                {isLoading ? '…' : formatINR(cashBalance)}
               </Text>
-              {cashQuery.data && (
+              {d?.cash && (
                 <Text style={styles.cashSub}>
-                  ↑ {formatINR(cashQuery.data.totalIn)}  ↓ {formatINR(cashQuery.data.totalOut)}
+                  ↑ {formatINR(d.cash.totalIn)}  ↓ {formatINR(d.cash.totalOut)}
                 </Text>
               )}
             </View>
@@ -255,8 +247,8 @@ export default function DashboardScreen() {
         </View>
 
         {/* Investments card */}
-        {savingsQuery.data && savingsQuery.data.count > 0 && (() => {
-          const sv = savingsQuery.data!;
+        {d?.savings && d.savings.count > 0 && (() => {
+          const sv = d.savings;
           const isGain = sv.totalGainLoss >= 0;
           return (
             <View style={[styles.cashCard, { backgroundColor: c.primary, shadowColor: c.primary }]}>
@@ -279,20 +271,19 @@ export default function DashboardScreen() {
 
         {/* Category breakdown chart */}
         <Text style={styles.sectionTitle}>Spending by Category</Text>
-        {categoryQuery.isLoading ? (
+        {isLoading ? (
           <View style={styles.card}>
             {[1, 2, 3].map(i => <View key={i} style={[styles.skeleton, { height: 20, marginBottom: 8 }]} />)}
           </View>
-        ) : !categoryQuery.data || categoryQuery.data.length === 0 ? (
+        ) : !d?.categories || d.categories.length === 0 ? (
           <View style={styles.card}>
             <Text style={styles.emptyText}>No spending data yet.</Text>
           </View>
         ) : (
           <View style={styles.card}>
-            {/* Stacked bar */}
             <View style={styles.stackedBar}>
-              {categoryQuery.data.map((cat, i) => {
-                const total = categoryQuery.data!.reduce((sum, c) => sum + c.total, 0);
+              {d.categories.map((cat, i) => {
+                const total = d.categories.reduce((sum, x) => sum + x.total, 0);
                 const pct = total > 0 ? (cat.total / total) * 100 : 0;
                 return pct > 0 ? (
                   <View
@@ -307,9 +298,7 @@ export default function DashboardScreen() {
                 ) : null;
               })}
             </View>
-
-            {/* Legend rows */}
-            {categoryQuery.data.slice(0, 8).map((cat, i) => (
+            {d.categories.slice(0, 8).map((cat, i) => (
               <View key={i} style={styles.legendRow}>
                 <View style={[styles.legendDot, { backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }]} />
                 <Text style={styles.legendLabel}>{cat.category.icon} {cat.category.name}</Text>
@@ -321,16 +310,16 @@ export default function DashboardScreen() {
 
         {/* Monthly trend chart */}
         <Text style={styles.sectionTitle}>Monthly Trend</Text>
-        {monthlyQuery.isLoading ? (
+        {isLoading ? (
           <View style={styles.card}>
             <View style={[styles.skeleton, { height: 100 }]} />
           </View>
-        ) : monthlyQuery.data && monthlyQuery.data.length > 0 ? (
+        ) : d?.monthly && d.monthly.length > 0 ? (
           <View style={styles.card}>
             <View style={styles.monthlyChart}>
               {(() => {
-                const maxVal = Math.max(...monthlyQuery.data!.map(m => Math.max(m.income, m.expenses)), 1);
-                return monthlyQuery.data!.map((m, i) => (
+                const maxVal = Math.max(...d.monthly.map(m => Math.max(m.income, m.expenses)), 1);
+                return d.monthly.map((m, i) => (
                   <View key={i} style={styles.monthColumn}>
                     <View style={styles.barContainer}>
                       <View style={[styles.monthBar, { height: `${(m.income / maxVal) * 100}%`, backgroundColor: c.success }]} />
@@ -356,27 +345,24 @@ export default function DashboardScreen() {
 
         {/* Budget progress */}
         <Text style={styles.sectionTitle}>Budget This Month</Text>
-        {budgetsQuery.isLoading ? (
+        {isLoading ? (
           <View style={styles.card}>
             {[1, 2].map(i => <View key={i} style={[styles.skeleton, { marginBottom: 12 }]} />)}
           </View>
-        ) : !budgetsQuery.data || budgetsQuery.data.data.length === 0 ? (
+        ) : !d?.budgets?.data?.length ? (
           <View style={styles.card}>
             <Text style={styles.emptyText}>No budgets set. Open the Budgets tab to add one.</Text>
           </View>
         ) : (
           <View style={styles.card}>
-            {budgetsQuery.data.data.map(budget => {
-              const isOver = budget.percentUsed >= 100;
+            {d.budgets.data.map(budget => {
+              const isOver    = budget.percentUsed >= 100;
               const isWarning = budget.percentUsed >= 80 && !isOver;
-              const barColor = isOver ? c.danger : isWarning ? c.warning : c.success;
-
+              const barColor  = isOver ? c.danger : isWarning ? c.warning : c.success;
               return (
                 <View key={budget.id} style={styles.budgetRow}>
                   <View style={styles.budgetHeader}>
-                    <Text style={styles.budgetName}>
-                      {budget.category.icon} {budget.category.name}
-                    </Text>
+                    <Text style={styles.budgetName}>{budget.category.icon} {budget.category.name}</Text>
                     <Text style={[styles.budgetAmount, isOver && styles.overBudget]}>
                       {formatINR(budget.spent)} / {formatINR(budget.amount)}
                     </Text>
@@ -388,6 +374,32 @@ export default function DashboardScreen() {
               );
             })}
           </View>
+        )}
+
+        {/* Streak & achievements */}
+        {d?.streaks && (
+          <>
+            <Text style={styles.sectionTitle}>Your Progress</Text>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>
+                🔥 {d.streaks.currentStreak}-day streak
+                {d.streaks.activeToday ? '' : ' · log today to keep it going'}
+              </Text>
+              <Text style={styles.streakSub}>
+                Longest {d.streaks.longestStreak} days · {d.streaks.unlockedCount}/{d.streaks.total} badges earned
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 6, marginHorizontal: -4 }}>
+                <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 4 }}>
+                  {d.streaks.achievements.map(a => (
+                    <View key={a.key} style={[styles.badge, !a.unlocked && styles.badgeLocked]}>
+                      <Text style={styles.badgeIcon}>{a.unlocked ? a.icon : '🔒'}</Text>
+                      <Text style={styles.badgeLabel} numberOfLines={2}>{a.title}</Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          </>
         )}
 
         {/* Reports quick link */}
@@ -453,21 +465,18 @@ const makeStyles = (c: Theme) => StyleSheet.create({
   card: { backgroundColor: c.card, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: c.cardBorder, gap: 10 },
   cardTitle: { fontSize: 14, fontWeight: '600', color: c.text, marginBottom: 4 },
 
-  // Income vs Expenses bars
   barRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   barLabel: { fontSize: 12, color: c.textMuted, width: 65 },
   barTrack: { flex: 1, height: 10, backgroundColor: c.track, borderRadius: 99, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 99 },
   barAmount: { fontSize: 12, fontWeight: '600', color: c.text, width: 50, textAlign: 'right' },
 
-  // Stacked category bar
   stackedBar: { height: 16, borderRadius: 8, overflow: 'hidden', flexDirection: 'row' },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { flex: 1, fontSize: 13, color: c.text },
   legendValue: { fontSize: 13, fontWeight: '600', color: c.text },
 
-  // Monthly bar chart
   monthlyChart: { flexDirection: 'row', alignItems: 'flex-end', height: 100, gap: 4 },
   monthColumn: { flex: 1, alignItems: 'center' },
   barContainer: { width: '100%', height: 80, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 2 },
@@ -477,7 +486,6 @@ const makeStyles = (c: Theme) => StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendSmall: { fontSize: 11, color: c.textMuted },
 
-  // Budget rows
   budgetRow: { gap: 6 },
   budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   budgetName: { fontSize: 13, color: c.text, fontWeight: '500' },
@@ -499,7 +507,29 @@ const makeStyles = (c: Theme) => StyleSheet.create({
   skeletonRow: { flexDirection: 'row', gap: 8 },
   skeleton: { flex: 1, height: 72, backgroundColor: c.track, borderRadius: 16 },
 
-  // Cash in Hand card
+  streakSub: { fontSize: 12, color: c.textFaint, marginTop: 2 },
+  badge: {
+    width: 78, alignItems: 'center', gap: 4, paddingVertical: 10, paddingHorizontal: 6,
+    borderRadius: 12, backgroundColor: c.chipBg, borderWidth: 1, borderColor: c.chipBorder,
+  },
+  badgeLocked: { opacity: 0.45 },
+  badgeIcon: { fontSize: 22 },
+  badgeLabel: { fontSize: 10, color: c.textMuted, fontWeight: '600', textAlign: 'center' },
+
+  netWorthCard: {
+    borderRadius: 16, padding: 18,
+    backgroundColor: c.primaryDeep,
+    shadowColor: c.primaryDeep, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  },
+  netWorthLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
+  netWorthValue: { fontSize: 30, fontWeight: '800', color: c.onColor, marginTop: 2 },
+  netWorthBreakdown: { flexDirection: 'row', gap: 14, marginTop: 6, flexWrap: 'wrap' },
+  netWorthBreakdownItem: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
+  sparkRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 36, marginTop: 14 },
+  sparkCol: { flex: 1, height: '100%', justifyContent: 'flex-end' },
+  sparkBar: { width: '100%', borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.55)' },
+
   cashCard: {
     borderRadius: 16, padding: 16,
     backgroundColor: c.orange,

@@ -24,6 +24,9 @@ import { LoansModule } from './loans/loans.module';
 import { GoalsModule } from './goals/goals.module';
 import { NetworthModule } from './networth/networth.module';
 import { SettlementsModule } from './settlements/settlements.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { StreaksModule } from './streaks/streaks.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -48,6 +51,9 @@ import { SettlementsModule } from './settlements/settlements.module';
     GoalsModule,
     NetworthModule,
     SettlementsModule,
+    CalendarModule,
+    StreaksModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
