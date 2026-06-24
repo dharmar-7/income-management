@@ -1,7 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
 import {
   PieChart,
   Pie,
@@ -9,13 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { apiFetch } from '@/lib/api';
+import { useDashboard } from '@/lib/useDashboard';
 import ChartTooltip from '@/components/ChartTooltip';
-
-interface CategoryData {
-  category: { name: string; icon: string };
-  total: number;
-}
 
 // 20 vibrant, high-saturation colours — ordered to maximise contrast between neighbours.
 const COLORS = [
@@ -42,17 +35,9 @@ const COLORS = [
 ];
 
 export default function CategoryChart() {
-  const { getToken } = useAuth();
+  const { data, isLoading } = useDashboard();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['by-category'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<CategoryData[]>('/transactions/by-category', token!);
-    },
-  });
-
-  const chartData = (data ?? []).map(d => ({
+  const chartData = (data?.categories ?? []).map(d => ({
     name: `${d.category.icon} ${d.category.name}`,
     value: d.total,
   }));

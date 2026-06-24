@@ -1,7 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
 import {
   BarChart,
   Bar,
@@ -12,15 +10,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { apiFetch } from '@/lib/api';
+import { useDashboard } from '@/lib/useDashboard';
 import ChartTooltip from '@/components/ChartTooltip';
-
-interface MonthData {
-  month: string;
-  year: number;
-  income: number;
-  expenses: number;
-}
 
 function formatINRShort(value: number) {
   if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
@@ -29,15 +20,7 @@ function formatINRShort(value: number) {
 }
 
 export default function MonthlyChart() {
-  const { getToken } = useAuth();
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['by-month'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<MonthData[]>('/transactions/by-month', token!);
-    },
-  });
+  const { data, isLoading } = useDashboard();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
@@ -47,7 +30,7 @@ export default function MonthlyChart() {
         <div className="h-48 bg-gray-100 dark:bg-gray-700 animate-pulse rounded-xl" />
       ) : (
         <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={data ?? []} barCategoryGap="30%">
+          <BarChart data={data?.monthly ?? []} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
             <YAxis tickFormatter={formatINRShort} tick={{ fontSize: 11 }} />

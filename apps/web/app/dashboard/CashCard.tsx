@@ -1,15 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { apiFetch } from '@/lib/api';
-
-interface CashBalance {
-  balance: number;
-  totalIn: number;
-  totalOut: number;
-}
+import { useDashboard, useInvalidateDashboard } from '@/lib/useDashboard';
 
 type Mode = 'idle' | 'add' | 'spend';
 
@@ -36,7 +30,9 @@ function todayISO() {
 
 export default function CashCard() {
   const { getToken } = useAuth();
-  const queryClient = useQueryClient();
+  const { data, isLoading } = useDashboard();
+  const invalidate = useInvalidateDashboard();
+  const cashData = data?.cash;
 
   const [mode, setMode] = useState<Mode>('idle');
   const [amount, setAmount] = useState('');
@@ -45,14 +41,6 @@ export default function CashCard() {
   const [date, setDate] = useState(todayISO);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['cash-balance'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<CashBalance>('/cash/balance', token!);
-    },
-  });
 
   function openMode(m: Mode) {
     setMode(m);
@@ -85,7 +73,7 @@ export default function CashCard() {
           date,
         }),
       });
-      queryClient.invalidateQueries({ queryKey: ['cash-balance'] });
+      invalidate();
       setMode('idle');
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong.');
@@ -127,15 +115,15 @@ export default function CashCard() {
         <div className="h-9 bg-white/20 rounded-xl animate-pulse w-32" />
       ) : (
         <div className="text-3xl font-bold tracking-tight">
-          {formatINR(data?.balance ?? 0)}
+          {formatINR(cashData?.balance ?? 0)}
         </div>
       )}
 
       {/* In/Out summary */}
-      {data && mode === 'idle' && (
+      {cashData && mode === 'idle' && (
         <div className="flex gap-4 mt-3 text-xs text-white/70">
-          <span>↑ {formatINR(data.totalIn)} in</span>
-          <span>↓ {formatINR(data.totalOut)} out</span>
+          <span>↑ {formatINR(cashData.totalIn)} in</span>
+          <span>↓ {formatINR(cashData.totalOut)} out</span>
         </div>
       )}
 

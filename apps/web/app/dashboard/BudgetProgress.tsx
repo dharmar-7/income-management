@@ -1,24 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
-
-interface BudgetWithProgress {
-  id: string;
-  amount: number;
-  category: { name: string; icon: string };
-  spent: number;
-  remaining: number;
-  percentUsed: number;
-}
-
-interface BudgetsResponse {
-  data: BudgetWithProgress[];
-  month: number;
-  year: number;
-}
+import { useDashboard } from '@/lib/useDashboard';
 
 function formatINR(n: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -29,19 +12,8 @@ function formatINR(n: number) {
 }
 
 export default function BudgetProgress() {
-  const { getToken } = useAuth();
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['budget-progress'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<BudgetsResponse>('/budgets', token!);
-    },
-    // Always re-fetch when the user navigates back to the dashboard tab.
-    // This ensures budgets created on /budgets show up immediately here.
-    refetchOnWindowFocus: true,
-    staleTime: 30_000, // 30s — shorter than default so mid-month changes appear fast
-  });
+  const { data, isLoading } = useDashboard();
+  const budgets = data?.budgets;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
@@ -61,7 +33,7 @@ export default function BudgetProgress() {
             </div>
           ))}
         </div>
-      ) : !data || data.data.length === 0 ? (
+      ) : !budgets || budgets.data.length === 0 ? (
         <div className="py-6 text-center">
           <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">No budgets set for this month.</p>
           <Link
@@ -73,7 +45,7 @@ export default function BudgetProgress() {
         </div>
       ) : (
         <div className="space-y-4">
-          {data.data.slice(0, 5).map(budget => {
+          {budgets.data.slice(0, 5).map(budget => {
             const isOver = budget.percentUsed >= 100;
             const isWarning = budget.percentUsed >= 80 && !isOver;
             const barColor = isOver
@@ -102,9 +74,9 @@ export default function BudgetProgress() {
             );
           })}
 
-          {data.data.length > 5 && (
+          {budgets.data.length > 5 && (
             <Link href="/budgets" className="block text-xs text-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 pt-1">
-              +{data.data.length - 5} more budgets
+              +{budgets.data.length - 5} more budgets
             </Link>
           )}
         </div>

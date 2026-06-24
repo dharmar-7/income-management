@@ -1,16 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
-import { apiFetch } from '@/lib/api';
-
-interface Summary {
-  totalIncome: number;
-  totalExpenses: number;
-  netSavings: number;
-  month: number;
-  year: number;
-}
+import { useDashboard } from '@/lib/useDashboard';
 
 function formatINR(amount: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -21,15 +11,8 @@ function formatINR(amount: number) {
 }
 
 export default function SummaryCards() {
-  const { getToken } = useAuth();
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['summary'],
-    queryFn: async () => {
-      const token = await getToken();
-      return apiFetch<Summary>('/transactions/summary', token!);
-    },
-  });
+  const { data, isLoading, error } = useDashboard();
+  const summary = data?.summary;
 
   if (isLoading) {
     return (
@@ -41,7 +24,7 @@ export default function SummaryCards() {
     );
   }
 
-  if (error || !data) {
+  if (error || !summary) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
         Could not load summary. Make sure you have imported some transactions.
@@ -52,21 +35,21 @@ export default function SummaryCards() {
   const cards = [
     {
       label: 'Total Income',
-      value: formatINR(data.totalIncome),
+      value: formatINR(summary.totalIncome),
       icon: '💰',
       gradient: 'from-emerald-500 to-teal-600',
     },
     {
       label: 'Total Expenses',
-      value: formatINR(data.totalExpenses),
+      value: formatINR(summary.totalExpenses),
       icon: '💸',
       gradient: 'from-rose-500 to-pink-600',
     },
     {
       label: 'Net Savings',
-      value: formatINR(data.netSavings),
-      icon: data.netSavings >= 0 ? '📈' : '📉',
-      gradient: data.netSavings >= 0 ? 'from-violet-500 to-indigo-600' : 'from-orange-500 to-amber-600',
+      value: formatINR(summary.netSavings),
+      icon: summary.netSavings >= 0 ? '📈' : '📉',
+      gradient: summary.netSavings >= 0 ? 'from-violet-500 to-indigo-600' : 'from-orange-500 to-amber-600',
     },
   ];
 

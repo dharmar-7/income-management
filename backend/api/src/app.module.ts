@@ -29,6 +29,7 @@ import { StreaksModule } from './streaks/streaks.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DocumentsModule } from './documents/documents.module';
 import { EventsModule } from './events/events.module';
+import { HabitsModule } from './habits/habits.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { EventsModule } from './events/events.module';
     DashboardModule,
     DocumentsModule,
     EventsModule,
+    HabitsModule,
   ],
   controllers: [AppController],
   providers: [
